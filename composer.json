@@ -1,0 +1,24 @@
+{
+    "name": "gleman17/laravel_tools",
+    "description": "A collection of Laravel tools for developers.",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Greg Leman",
+            "email": "gleman17@gmail.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Gleman17\\LaravelTools\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Gleman17\\LaravelTools\\LaravelToolsServiceProvider"
+            ]
+        }
+    }
+}
