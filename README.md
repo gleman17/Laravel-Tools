@@ -43,7 +43,7 @@ The package itself has no dependency upon staudenmeir.
 To install this package in your Laravel project:
 
 ```bash
-composer require gleman17/laravel-tools
+composer require gleman17/Laravel-Tools
 ```
 
 ### Publish Configuration (Optional)
