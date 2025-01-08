@@ -1,6 +1,7 @@
 <?php
 
 namespace Gleman17\LaravelTools\Services;
+use Illuminate\Filesystem\Filesystem;
 use Illuminate\Contracts\Filesystem\FileNotFoundException;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
@@ -19,16 +20,16 @@ class TableRelationshipAnalyzerService
     public array $messages = [];
     private GenerateRelationshipService $generateRelationshipService;
     private ModelGeneratorService $modelGeneratorService;
-    protected ?string $file;
-    protected ?string $log;
+    protected $file;
+    protected $log;
     public function __construct(
         ?GenerateRelationshipService $generateRelationshipService = null,
         ?ModelGeneratorService $modelGeneratorService = null,
-        ?string $file = null,
-        ?string $log = null
+        $file = null,
+        $log = null
     ) {
-        $this->file = $file ?: File::class;
-        $this->log = $log ?: Log::class;
+        $this->file = $file ?: new Filesystem();
+        $this->log = $log ?: new Log();
         $this->generateRelationshipService = $generateRelationshipService ?? new GenerateRelationshipService();
         $this->modelGeneratorService = $modelGeneratorService ?? new ModelGeneratorService();
     }
@@ -77,6 +78,31 @@ class TableRelationshipAnalyzerService
     public function setColumnList(array $columnList): void
     {
         $this->columnList = $columnList;
+    }
+
+    /**
+     * Returns a list of tables connected to the given model's table.
+     *
+     * @param string $modelName The name of the model.
+     * @return array<string> The list of connected table names.
+     */
+    public function getConnectedTables(string $longModelName): array
+    {
+        info($this->adjacencyList);
+        // Convert the model name to its corresponding table name
+        $parts = explode('\\', $longModelName);
+        $modelName = end($parts);
+        $tableName = Str::snake(Str::plural($modelName));
+info($tableName);
+        // Check if the table exists in the adjacency list
+        if (!isset($this->adjacencyList[$tableName])) {
+            info('table not found in adjacency list');
+            return [];
+        }
+
+        info($this->adjacencyList[$tableName]);
+        // Return the keys of connected tables
+        return array_keys($this->adjacencyList[$tableName]);
     }
 
     /**

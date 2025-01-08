@@ -20,8 +20,8 @@ class BuildRelationshipsService
                                          $filesystem = null,
                                          $logger = null
     ) {
-        $this->filesystem = $filesystem ?: File::getFacadeRoot();
-        $this->logger = $logger ?: Log::getFacadeRoot();
+        $this->filesystem = $filesystem ?? File::getFacadeRoot();
+        $this->logger = $logger ?? Log::getFacadeRoot();
         $this->analyzer = $analyzer;
         $this->relationshipService = $relationshipService;
         $this->modelService = $modelService;

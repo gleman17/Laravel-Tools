@@ -4,16 +4,19 @@ namespace Gleman17\LaravelTools\Services;
 
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Filesystem\Filesystem;
 
 class ModelService
 {
+    protected $command;
     protected $filesystem;
     protected $logger;
 
-    public function __construct($filesystem = null, $logger = null)
+    public function __construct($command=null, $filesystem = null, $logger = null)
     {
-        $this->filesystem = $filesystem ?: File::getFacadeRoot();
-        $this->logger = $logger ?: Log::getFacadeRoot();
+        $this->command = $command;
+        $this->filesystem = $filesystem ?? new Filesystem();
+        $this->logger = $logger ?? Log::getFacadeRoot();
     }
 
     /**
@@ -33,5 +36,11 @@ class ModelService
             }
         }
         return $models;
+    }
+
+    public function modelExists(string $modelName): bool
+    {
+        $modelPath = app_path("Models/{$modelName}.php");
+        return $this->filesystem->exists($modelPath);
     }
 }

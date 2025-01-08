@@ -98,6 +98,26 @@ class TableRelationAnalyzerServiceTest extends TestCase
         );
     }
 
+    /** @test */
+    public function it_returns_connected_tables_for_a_model_name()
+    {
+        // Arrange: Mock adjacency list
+        $service = new TableRelationshipAnalyzerService();
+        $mockAdjacencyList = [
+            'users' => ['posts' => 1, 'roles' => 1],
+            'posts' => ['users' => 1, 'comments' => 1],
+            'roles' => ['users' => 1],
+            'comments' => ['posts' => 1],
+        ];
+        $service->setGraph($mockAdjacencyList);
+
+        // Act: Call the method to get connected tables
+        $result = $service->getConnectedTables('User');
+
+        // Assert: Verify the expected connected tables
+        $this->assertEquals(['posts', 'roles'], $result);
+    }
+
     private function mockFileFacade(): void
     {
         File::shouldReceive('exists')

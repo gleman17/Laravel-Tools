@@ -15,8 +15,8 @@ class RelationshipService
 
     public function __construct($fileSystem = null, $logger = null, $basePath = null, $appPath = null)
     {
-        $this->fileSystem = $fileSystem ?: Filesystem::class;
-        $this->logger = $logger ?: Log::class;
+        $this->fileSystem = $fileSystem ?: new Filesystem();
+        $this->logger = $logger ?: new Log();
         $this->basePath = $basePath ?: base_path();
         $this->appPath = $appPath ?: app_path();
     }

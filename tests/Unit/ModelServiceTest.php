@@ -73,6 +73,48 @@ class ModelServiceTest extends TestCase
         $this->assertEmpty($result);
     }
 
+    /** @test */
+    public function it_returns_true_when_model_exists()
+    {
+        $modelPath = app_path('Models/User.php');
+
+        // Mock the filesystem to return true for the existence check
+        $this->filesystem
+            ->shouldReceive('exists')
+            ->once()
+            ->with($modelPath)
+            ->andReturn(true);
+
+        $result = $this->modelService->modelExists('User');
+
+        $this->assertTrue($result);
+    }
+
+    /** @test */
+    public function it_returns_false_when_model_does_not_exist()
+    {
+        $modelPath = app_path('Models/NonExistentModel.php');
+
+        // Mock the filesystem to return false for the existence check
+        $this->filesystem
+            ->shouldReceive('exists')
+            ->once()
+            ->with($modelPath)
+            ->andReturn(false);
+
+        $result = $this->modelService->modelExists('NonExistentModel');
+
+        $this->assertFalse($result);
+    }
+
+    public function setUp(): void
+    {
+        parent::setUp();
+        $this->filesystem = Mockery::mock(Filesystem::class);
+        $this->modelService = new ModelService(NULL, $this->filesystem);
+        Log::swap(Mockery::mock(Logger::class)); // Mock the Log facade for testing purposes only.
+    }
+
     protected function tearDown(): void
     {
         parent::tearDown();
