@@ -19,7 +19,7 @@ class AnalyzeMethodUsageCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'analyze:methods';
+    protected $signature;
 
     /**
      * The console command description.
