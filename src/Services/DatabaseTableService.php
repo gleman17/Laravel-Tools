@@ -14,9 +14,13 @@ class DatabaseTableService
 
         switch ($driver) {
             case 'mysql':
+                $tables = DB::select('SHOW TABLES');
                 return array_map(
-                    fn($table) => $table->Tables_in_database,  // Use the actual column name
-                    DB::select('SHOW TABLES')
+                    function($table) {
+                        // Convert object to array and get first value
+                        return current((array) $table);
+                    },
+                    $tables
                 );
 
             case 'sqlite':
