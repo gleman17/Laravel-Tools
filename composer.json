@@ -9,6 +9,9 @@
             "email": "gleman17@gmail.com"
         }
     ],
+    "require": {
+        "nikic/php-parser": "^5.4"
+    },
     "autoload": {
         "psr-4": {
             "Gleman17\\LaravelTools\\": "src/"
