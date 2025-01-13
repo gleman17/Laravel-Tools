@@ -6,16 +6,16 @@ use Illuminate\Support\Facades\DB;
 class DatabaseTableService
 {
     /**
-     * @return array<int, object|string>
+     * @return array<int, string>
      */
     public function getDatabaseTables(): array
-{
+    {
         $driver = DB::getDriverName();
 
         switch ($driver) {
             case 'mysql':
                 return array_map(
-                    fn($table) => $table->{key($table)},
+                    fn($table) => $table->Tables_in_database,  // Use the actual column name
                     DB::select('SHOW TABLES')
                 );
 
