@@ -37,9 +37,9 @@ class AnalyzeMethodUsageCommand extends Command
     {
         $this->signature = config('gleman17_laravel_tools.command_signatures.analyze_usages',
                 'tools:analyze-usages') .
-              '{--path=app : The path to analyze relative to the Laravel root} '.
-              '{--output=method_usage.csv : The output file name} '.
-              '{--min-calls=1 : Minimum number of external calls to include in report}';
+              ' {--path=app : The path to analyze relative to the Laravel root}'.
+              ' {--output=method_usage.csv : The output file name}'.
+              ' {--min-calls=1 : Minimum number of external calls to include in report}';
 
         parent::__construct();
     }
