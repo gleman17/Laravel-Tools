@@ -2,6 +2,11 @@
 
 namespace Gleman17\LaravelTools;
 
+use Gleman17\LaravelTools\Console\Commands\AnalyzeMethodUsageCommand;
+use Gleman17\LaravelTools\Console\Commands\BuildRelationshipsCommand;
+use Gleman17\LaravelTools\Console\Commands\CompareTablesWithModelsCommand;
+use Gleman17\LaravelTools\Console\Commands\ListModelsCommand;
+use Gleman17\LaravelTools\Console\Commands\RemoveRelationshipsCommand;
 use Illuminate\Support\ServiceProvider;
 
 class LaravelToolsServiceProvider extends ServiceProvider
@@ -19,10 +24,11 @@ class LaravelToolsServiceProvider extends ServiceProvider
         // Register commands
         if ($this->app->runningInConsole()) {
             $this->commands([
-                \Gleman17\LaravelTools\Console\Commands\RemoveRelationshipsCommand::class,
-                \Gleman17\LaravelTools\Console\Commands\BuildRelationshipsCommand::class, // Replace with your commands
-                \Gleman17\LaravelTools\Console\Commands\CompareTablesWithModelsCommand::class, // Replace with your commands
-                \Gleman17\LaravelTools\Console\Commands\ListModelsCommand::class, // Replace with your commands
+                RemoveRelationshipsCommand::class,
+                BuildRelationshipsCommand::class,
+                CompareTablesWithModelsCommand::class,
+                ListModelsCommand::class,
+                AnalyzeMethodUsageCommand::class,
             ]);
         }
     }
