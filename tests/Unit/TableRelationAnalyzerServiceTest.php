@@ -1,6 +1,7 @@
 <?php
 
 namespace Tests\Unit;
+use PHPUnit\Framework\Attributes\Test;
 
 use Gleman17\LaravelTools\Services\GenerateRelationship\GenerateRelationshipService;
 use Gleman17\LaravelTools\Services\ModelGeneratorService;
@@ -18,7 +19,7 @@ class TableRelationAnalyzerServiceTest extends TestCase
     private GenerateRelationshipService $generateRelationshipService;
     private ModelGeneratorService $modelGeneratorService;
 
-    /** @test */
+    #[Test]
     public function it_can_get_the_path_between_two_tables(): void
     {
 
@@ -26,7 +27,7 @@ class TableRelationAnalyzerServiceTest extends TestCase
         $this->assertCount(2, $path);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_generate_models(): void
     {
         $this->modelGeneratorService
@@ -39,13 +40,13 @@ class TableRelationAnalyzerServiceTest extends TestCase
         $this->assertTrue(true); // Test should focus on interactions
     }
 
-    /** @test */
+    #[Test]
     public function it_can_get_the_graph(): void
     {
         $this->assertArrayHasKey('posts', $this->service->getGraph());
     }
 
-    /** @test */
+    #[Test]
     public function it_handles_missing_models(): void
     {
         $this->modelGeneratorService
@@ -98,7 +99,7 @@ class TableRelationAnalyzerServiceTest extends TestCase
         );
     }
 
-    /** @test */
+    #[Test]
     public function it_returns_connected_tables_for_a_model_name()
     {
         // Arrange: Mock adjacency list

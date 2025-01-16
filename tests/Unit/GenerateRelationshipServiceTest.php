@@ -1,6 +1,7 @@
 <?php
 
 namespace Tests\Unit\Services\GenerateRelationship;
+use PHPUnit\Framework\Attributes\Test;
 
 use Gleman17\LaravelTools\Services\GenerateRelationship\GenerateRelationshipService;
 use Gleman17\LaravelTools\Services\GenerateRelationship\OneStepRelationshipGenerator;
@@ -37,7 +38,7 @@ class GenerateRelationshipServiceTest extends TestCase
         parent::tearDown();
     }
 
-    /** @test */
+    #[Test]
     public function it_generates_one_step_relationship()
     {
         $relationshipName = 'posts';
@@ -61,7 +62,7 @@ class GenerateRelationshipServiceTest extends TestCase
         $this->assertEquals($expectedMethod, $result);
     }
 
-    /** @test */
+    #[Test]
     public function it_generates_two_step_relationship()
     {
         $relationshipName = 'postComments';
@@ -88,7 +89,7 @@ class GenerateRelationshipServiceTest extends TestCase
         $this->assertEquals($expectedMethod, $result);
     }
 
-    /** @test */
+    #[Test]
     public function it_generates_deep_relationship()
     {
         $relationshipName = 'postCommentLikes';
@@ -116,7 +117,7 @@ class GenerateRelationshipServiceTest extends TestCase
         $this->assertEquals($expectedMethod, $result);
     }
 
-    /** @test */
+    #[Test]
     public function it_handles_reversed_relationships()
     {
         $relationshipName = 'user';
@@ -140,7 +141,7 @@ class GenerateRelationshipServiceTest extends TestCase
         $this->assertEquals($expectedMethod, $result);
     }
 
-    /** @test */
+    #[Test]
     public function it_throws_exception_for_empty_path()
     {
         $this->expectException(\InvalidArgumentException::class);

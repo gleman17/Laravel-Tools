@@ -5,6 +5,17 @@ use Illuminate\Support\Facades\DB;
 
 class DatabaseTableService
 {
+
+    public function getMetadata(): array
+    {
+        $tables = $this->getDatabaseTables();
+        $metadata = [];
+        foreach ($tables as $table) {
+            $metadata[$table] = $this->getTableColumns($table);
+        }
+        return $metadata;
+    }
+
     /**
      * @return array<int, string>
      */
@@ -44,5 +55,102 @@ class DatabaseTableService
             default:
                 throw new \RuntimeException("Unsupported database driver: $driver");
         }
+    }
+
+    public function tableToModelName(string $table): string
+    {
+        return Str::studly(Str::singular($table));
+    }
+
+    public function foreignKeyToRelationName(string $foreignKey): string
+    {
+        return Str::plural(Str::before($foreignKey, '_id'));
+    }
+
+    public function getTableColumns(string $table): array
+    {
+        if (isset($this->tableMetadata[$table])) {
+            return $this->tableMetadata[$table];
+        }
+
+        $driver = DB::getDriverName();
+        $columns = [];
+
+        switch ($driver) {
+            case 'mysql':
+                $columnsInfo = DB::select("SHOW COLUMNS FROM $table");
+                foreach ($columnsInfo as $column) {
+                    $columns[$column->Field] = [
+                        'type' => $this->parseColumnType($column->Type),
+                        'nullable' => $column->Null === 'YES',
+                        'default' => $column->Default,
+                        'key' => $column->Key,
+                    ];
+                }
+                break;
+
+            case 'pgsql':
+                $columnsInfo = DB::select("
+                    SELECT column_name, data_type, is_nullable, column_default
+                    FROM information_schema.columns
+                    WHERE table_name = ?
+                    AND table_schema = 'public'
+                ", [$table]);
+
+                foreach ($columnsInfo as $column) {
+                    $columns[$column->column_name] = [
+                        'type' => $column->data_type,
+                        'nullable' => $column->is_nullable === 'YES',
+                        'default' => $column->column_default,
+                    ];
+                }
+                break;
+
+            case 'sqlite':
+                $columnsInfo = DB::select("PRAGMA table_info($table)");
+                foreach ($columnsInfo as $column) {
+                    $columns[$column->name] = [
+                        'type' => $column->type,
+                        'nullable' => !$column->notnull,
+                        'default' => $column->dflt_value,
+                    ];
+                }
+                break;
+
+            case 'sqlsrv':
+                $columnsInfo = DB::select("
+                    SELECT
+                        c.name AS column_name,
+                        t.name AS data_type,
+                        c.is_nullable,
+                        c.default_object_id
+                    FROM sys.columns c
+                    INNER JOIN sys.types t ON c.system_type_id = t.system_type_id
+                    WHERE OBJECT_ID = OBJECT_ID(?)
+                ", [$table]);
+
+                foreach ($columnsInfo as $column) {
+                    $columns[$column->column_name] = [
+                        'type' => $column->data_type,
+                        'nullable' => $column->is_nullable,
+                        'default' => $column->default_object_id,
+                    ];
+                }
+                break;
+
+            default:
+                throw new \RuntimeException("Unsupported database driver: $driver");
+        }
+
+        $this->tableMetadata[$table] = $columns;
+        return $columns;
+    }
+
+    private function parseColumnType(string $type): string
+    {
+        // Extract base type from MySQL type definition
+        // e.g., "varchar(255)" becomes "varchar"
+        preg_match('/^([a-z]+)/', $type, $matches);
+        return $matches[1] ?? $type;
     }
 }

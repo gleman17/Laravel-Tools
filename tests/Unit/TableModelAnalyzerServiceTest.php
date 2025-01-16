@@ -1,6 +1,7 @@
 <?php
 
 namespace Tests\Unit;
+use PHPUnit\Framework\Attributes\Test;
 
 use Gleman17\LaravelTools\Services\DatabaseTableService;
 use Gleman17\LaravelTools\Services\TableModelAnalyzerService;
@@ -16,7 +17,7 @@ class TableModelAnalyzerServiceTest extends TestCase
         $this->service = new TableModelAnalyzerService();
     }
 
-    /** @test */
+    #[Test]
     public function it_can_get_model_table_names() : void
     {
         $model_table_names = $this->service->getModelTableNames();

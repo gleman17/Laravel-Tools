@@ -7,4 +7,5 @@ return [
         'list_models' => 'tools:list-models',
         'analyze_usages' => 'tools:analyze-usages',
     ],
+    'ai_model' => 'gpt-4',
 ];

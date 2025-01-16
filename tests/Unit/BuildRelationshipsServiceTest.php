@@ -1,6 +1,7 @@
 <?php
 
 namespace Tests\Unit;
+use PHPUnit\Framework\Attributes\Test;
 
 use Gleman17\LaravelTools\Services\BuildRelationshipsService;
 use Gleman17\LaravelTools\Services\ModelService;
@@ -37,7 +38,7 @@ class BuildRelationshipsServiceTest extends TestCase
         parent::tearDown();
     }
 
-    /** @test */
+    #[Test]
     public function it_validates_model_existence_when_building_relationships()
     {
         $this->modelService->shouldReceive('modelExists')
@@ -50,7 +51,7 @@ class BuildRelationshipsServiceTest extends TestCase
         $this->assertEquals(['Model NonExistentModel does not exist.'], $messages);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_build_a_single_relationship()
     {
         $this->modelService->shouldReceive('modelExists')
@@ -70,7 +71,7 @@ class BuildRelationshipsServiceTest extends TestCase
         $this->assertEquals(['Relationship created successfully'], $messages);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_build_all_relationships_for_a_model()
     {
         $this->modelService->shouldReceive('modelExists')
@@ -94,7 +95,7 @@ class BuildRelationshipsServiceTest extends TestCase
         $this->assertEquals(['Success', 'Success'], $messages);
     }
 
-    /** @test */
+    #[Test]
     public function it_handles_no_connected_models()
     {
         $this->modelService->shouldReceive('modelExists')
@@ -112,7 +113,7 @@ class BuildRelationshipsServiceTest extends TestCase
         $this->assertEquals(['No connected models found for User'], $messages);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_build_all_relationships()
     {
         $this->modelService->shouldReceive('getModelNames')
@@ -135,7 +136,7 @@ class BuildRelationshipsServiceTest extends TestCase
         $this->assertEquals(['Success', 'Success'], $messages);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_remove_a_single_relationship()
     {
         $this->modelService->shouldReceive('modelExists')
@@ -154,7 +155,7 @@ class BuildRelationshipsServiceTest extends TestCase
         $this->assertEmpty($messages);
     }
 
-    /** @test */
+    #[Test]
     public function it_can_remove_all_relationships_for_a_model()
     {
         $this->modelService->shouldReceive('modelExists')

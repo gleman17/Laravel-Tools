@@ -1,6 +1,7 @@
 <?php
 
 namespace Tests\Unit;
+use PHPUnit\Framework\Attributes\Test;
 
 use Illuminate\Filesystem\Filesystem;
 use Tests\TestCase;
@@ -34,7 +35,7 @@ class GetModelPathTest extends TestCase
         parent::tearDown();
     }
 
-    /** @test */
+    #[Test]
     public function it_gets_model_path_with_base_name()
     {
         $modelPath = $this->service->getModelPath('User');
@@ -44,7 +45,7 @@ class GetModelPathTest extends TestCase
         );
     }
 
-    /** @test */
+    #[Test]
     public function it_gets_model_path_with_partial_namespace()
     {
         $this->assertEquals(
@@ -53,7 +54,7 @@ class GetModelPathTest extends TestCase
         );
     }
 
-    /** @test */
+    #[Test]
     public function it_gets_model_path_with_full_namespace()
     {
         $this->assertEquals(
@@ -62,7 +63,7 @@ class GetModelPathTest extends TestCase
         );
     }
 
-    /** @test */
+    #[Test]
     public function it_gets_model_path_with_relative_path()
     {
         $this->assertEquals(
@@ -71,7 +72,7 @@ class GetModelPathTest extends TestCase
         );
     }
 
-    /** @test */
+    #[Test]
     public function it_gets_model_path_with_absolute_path()
     {
         $this->assertEquals(
@@ -80,7 +81,7 @@ class GetModelPathTest extends TestCase
         );
     }
 
-    /** @test */
+    #[Test]
     public function it_removes_relationship_from_model()
     {
         $modelPath = '/base/path/app/Models/User.php';
@@ -111,7 +112,7 @@ EOF;
         $this->assertTrue($result);
     }
 
-    /** @test */
+    #[Test]
     public function it_returns_false_when_removing_nonexistent_relationship()
     {
         $modelPath = '/base/path/app/Models/User.php';
@@ -123,7 +124,7 @@ EOF;
         $this->assertFalse($result);
     }
 
-    /** @test */
+    #[Test]
     public function it_checks_relationship_exists_in_model()
     {
         $modelPath = '/base/path/app/Models/User.php';
@@ -144,7 +145,7 @@ EOF;
         $this->assertFalse($this->service->relationshipExistsInModel('User', 'nonexistent'));
     }
 
-    /** @test */
+    #[Test]
     public function it_finds_duplicate_relationships()
     {
         $modelPath = '/base/path/app/Models/User.php';

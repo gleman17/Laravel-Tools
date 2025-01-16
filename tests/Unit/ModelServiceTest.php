@@ -1,6 +1,6 @@
 <?php
-
 namespace Tests\Unit;
+use PHPUnit\Framework\Attributes\Test;
 
 use Gleman17\LaravelTools\Services\ModelService;
 use Illuminate\Filesystem\Filesystem;
@@ -8,12 +8,28 @@ use Illuminate\Support\Facades\Log;
 use Tests\TestCase;
 use Symfony\Component\Finder\SplFileInfo;
 use Mockery;
+use Illuminate\Log\Logger;
 
 class ModelServiceTest extends TestCase
 {
+    protected $filesystem;
+    protected $modelService;
+    protected $testPath = '/test/path';
+
+    public function setUp(): void
+    {
+        parent::setUp();
+        $this->filesystem = Mockery::mock(Filesystem::class);
+        $this->modelService = new ModelService(
+            null,
+            $this->filesystem,
+            Mockery::mock(Logger::class),
+            $this->testPath
+        );
+    }
+
     public function test_get_model_names_returns_model_classes()
     {
-// Create mock files
         $file1 = Mockery::mock(SplFileInfo::class);
         $file1->shouldReceive('getFilenameWithoutExtension')
             ->once()
@@ -24,32 +40,27 @@ class ModelServiceTest extends TestCase
             ->once()
             ->andReturn('Post');
 
-// Create filesystem mock
-        $filesystem = Mockery::mock(Filesystem::class);
-        $filesystem->shouldReceive('allFiles')
+        $this->filesystem->shouldReceive('allFiles')
             ->once()
-            ->with(app_path('Models'))
+            ->with($this->testPath . '/Models')
             ->andReturn([$file1, $file2]);
 
-// Mock Log facade
+        $result = $this->modelService->getModelNames();
 
-// Create test class
-        $modelService = new ModelService($filesystem);
-        $result = $modelService->getModelNames();
-
-        $this->assertEquals(['App\Models\User', 'App\Models\Post'], $result);
+        $this->assertEquals(
+            ['App\Models\Post', 'App\Models\User'],
+            $result
+        );
     }
 
     public function test_get_model_names_handles_empty_directory()
     {
-        $filesystem = Mockery::mock(Filesystem::class);
-        $filesystem->shouldReceive('allFiles')
+        $this->filesystem->shouldReceive('allFiles')
             ->once()
-            ->with(app_path('Models'))
+            ->with($this->testPath . '/Models')
             ->andReturn([]);
 
-        $modelService = new ModelService($filesystem);
-        $result = $modelService->getModelNames();
+        $result = $this->modelService->getModelNames();
 
         $this->assertEmpty($result);
     }
@@ -61,26 +72,22 @@ class ModelServiceTest extends TestCase
             ->once()
             ->andReturn('NonExistentModel');
 
-        $filesystem = Mockery::mock(Filesystem::class);
-        $filesystem->shouldReceive('allFiles')
+        $this->filesystem->shouldReceive('allFiles')
             ->once()
-            ->with(app_path('Models'))
+            ->with($this->testPath . '/Models')
             ->andReturn([$file]);
 
-        $modelService = new ModelService($filesystem);
-        $result = $modelService->getModelNames();
+        $result = $this->modelService->getModelNames();
 
-        $this->assertEmpty($result);
+        $this->assertEquals(['App\Models\NonExistentModel'], $result);
     }
 
-    /** @test */
+    #[Test]
     public function it_returns_true_when_model_exists()
     {
-        $modelPath = app_path('Models/User.php');
+        $modelPath = $this->testPath . '/Models/User.php';
 
-        // Mock the filesystem to return true for the existence check
-        $this->filesystem
-            ->shouldReceive('exists')
+        $this->filesystem->shouldReceive('exists')
             ->once()
             ->with($modelPath)
             ->andReturn(true);
@@ -90,14 +97,12 @@ class ModelServiceTest extends TestCase
         $this->assertTrue($result);
     }
 
-    /** @test */
+    #[Test]
     public function it_returns_false_when_model_does_not_exist()
     {
-        $modelPath = app_path('Models/NonExistentModel.php');
+        $modelPath = $this->testPath . '/Models/NonExistentModel.php';
 
-        // Mock the filesystem to return false for the existence check
-        $this->filesystem
-            ->shouldReceive('exists')
+        $this->filesystem->shouldReceive('exists')
             ->once()
             ->with($modelPath)
             ->andReturn(false);
@@ -107,17 +112,9 @@ class ModelServiceTest extends TestCase
         $this->assertFalse($result);
     }
 
-    public function setUp(): void
-    {
-        parent::setUp();
-        $this->filesystem = Mockery::mock(Filesystem::class);
-        $this->modelService = new ModelService(NULL, $this->filesystem);
-        Log::swap(Mockery::mock(Logger::class)); // Mock the Log facade for testing purposes only.
-    }
-
     protected function tearDown(): void
     {
-        parent::tearDown();
         Mockery::close();
+        parent::tearDown();
     }
 }

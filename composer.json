@@ -10,7 +10,8 @@
         }
     ],
     "require": {
-        "nikic/php-parser": "^5.4"
+        "nikic/php-parser": "^5.4",
+        "echolabsdev/prism": "^0.6.0"
     },
     "autoload": {
         "psr-4": {
