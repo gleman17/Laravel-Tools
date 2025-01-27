@@ -14,17 +14,17 @@ class BuildRelationshipsService
     private $logger;
 
     public function __construct(
-        TableRelationshipAnalyzerService $analyzer,
-        RelationshipService $relationshipService,
-        ModelService $modelService,
-                                         $filesystem = null,
-                                         $logger = null
+        ?TableRelationshipAnalyzerService $analyzer,
+        ?RelationshipService $relationshipService,
+        ?ModelService $modelService,
+        $filesystem = null,
+        $logger = null
     ) {
         $this->filesystem = $filesystem ?? File::getFacadeRoot();
         $this->logger = $logger ?? Log::getFacadeRoot();
-        $this->analyzer = $analyzer;
-        $this->relationshipService = $relationshipService;
-        $this->modelService = $modelService;
+        $this->analyzer = $analyzer  ?? new TableRelationshipAnalyzerService();
+        $this->relationshipService = $relationshipService ?? new RelationshipService();
+        $this->modelService = $modelService ?? new ModelService();
     }
 
     /**

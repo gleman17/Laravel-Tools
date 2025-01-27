@@ -43,4 +43,17 @@ class ModelService
         $modelPath = $this->appPath . "/Models/{$modelName}.php";
         return $this->filesystem->exists($modelPath);
     }
+
+    /**
+     * Convert the model name to its corresponding table name
+     * @param string $longModelName
+     * @return array
+     */
+    public function modelToTableName(string $longModelName): array
+    {
+        $parts = explode('\\', $longModelName);
+        $modelName = end($parts);
+        $tableName = Str::snake(Str::plural($modelName));
+        return [$parts, $tableName];
+    }
 }

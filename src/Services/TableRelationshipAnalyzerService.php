@@ -1,6 +1,7 @@
 <?php
 
 namespace Gleman17\LaravelTools\Services;
+
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Contracts\Filesystem\FileNotFoundException;
 use Illuminate\Support\Facades\Log;
@@ -25,6 +26,7 @@ class TableRelationshipAnalyzerService
     public function __construct(
         ?GenerateRelationshipService $generateRelationshipService = null,
         ?ModelGeneratorService $modelGeneratorService = null,
+        ?ModelService $modelService = null,
         $file = null,
         $log = null
     ) {
@@ -32,6 +34,7 @@ class TableRelationshipAnalyzerService
         $this->log = $log ?: new Log();
         $this->generateRelationshipService = $generateRelationshipService ?? new GenerateRelationshipService();
         $this->modelGeneratorService = $modelGeneratorService ?? new ModelGeneratorService();
+        $this->modelService = $modelService?? new ModelService();
     }
 
     public function analyze(): void
@@ -83,24 +86,17 @@ class TableRelationshipAnalyzerService
     /**
      * Returns a list of tables connected to the given model's table.
      *
-     * @param string $modelName The name of the model.
+     * @param string $longModelName
      * @return array<string> The list of connected table names.
      */
     public function getConnectedTables(string $longModelName): array
     {
-        info($this->adjacencyList);
-        // Convert the model name to its corresponding table name
-        $parts = explode('\\', $longModelName);
-        $modelName = end($parts);
-        $tableName = Str::snake(Str::plural($modelName));
-info($tableName);
-        // Check if the table exists in the adjacency list
+        [$parts, $tableName] = $this->modelService->modelToTableName($longModelName);
+
         if (!isset($this->adjacencyList[$tableName])) {
-            info('table not found in adjacency list');
             return [];
         }
 
-        info($this->adjacencyList[$tableName]);
         // Return the keys of connected tables
         return array_keys($this->adjacencyList[$tableName]);
     }
@@ -462,4 +458,6 @@ info($tableName);
 
         return array_unique($connectedTables);
     }
+
+
 }
