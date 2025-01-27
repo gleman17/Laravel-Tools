@@ -36,40 +36,17 @@ class ModelGeneratorService
         $tableName = Str::snake(Str::plural($modelName));
 
         try {
-            // Check permissions on directories
             $this->checkDirectoryPermissions(app_path('Models'), 'Models directory');
             $this->checkDirectoryPermissions(database_path('factories'), 'Factories directory');
 
-            // Check if the table exists
             if (!Schema::hasTable($tableName)) {
                 $this->errors[] = "Table $tableName does not exist in the database.";
                 return $this->errors;
             }
 
-            $columns = Schema::getColumnListing($tableName);
-
-            // Determine $fillable and $guarded
-            $excludedColumns = ['id', 'uuid', 'created_at', 'updated_at', 'deleted_at'];
-            $fillable = array_values(array_diff($columns, $excludedColumns));
-            $guarded = array_values(array_intersect($columns, $excludedColumns));
-
-            // Create the model if it does not exist
-            if (!$this->fileExistsOrCreate($modelPath, function() use ($modelName, $fillable, $guarded, $modelPath) {
-                $modelContent = $this->generateModelContent($modelName, $fillable, $guarded);
-                $this->file::put($modelPath, $modelContent);
-                chmod($modelPath, 0777);
-            })) {
-                $this->errors[] = "Model $modelName already exists or failed to create.";
-            }
-
-            // Create the factory if it does not exist
-            if (!$this->fileExistsOrCreate($factoryPath, function() use ($modelName, $fillable, $factoryPath) {
-                $factoryContent = $this->generateFactoryContent($modelName, $fillable);
-                $this->file::put($factoryPath, $factoryContent);
-                chmod($factoryPath, 0777);
-            })) {
-                $this->errors[] = "Factory for $modelName already exists or failed to create.";
-            }
+            [$fillable, $guarded] = $this->getModelProperties($tableName);
+            $this->createModelIfNotExist($modelPath, $modelName, $fillable, $guarded);
+            $this->createFactoryIfNotExist($factoryPath, $modelName, $fillable);
 
         } catch (\Exception $e) {
             $this->errors[] = $e->getMessage();
@@ -196,5 +173,54 @@ EOT;
             }
         }
         return true; // Return true if the file already exists or was successfully created.
+    }
+
+    /**
+     * @param $tableName
+     * @return array
+     */
+    public function getModelProperties($tableName): array
+    {
+        $columns = Schema::getColumnListing($tableName);
+
+        $excludedColumns = ['id', 'uuid', 'created_at', 'updated_at', 'deleted_at'];
+        $fillable = array_values(array_diff($columns, $excludedColumns));
+        $guarded = array_values(array_intersect($columns, $excludedColumns));
+        return array($fillable, $guarded);
+    }
+
+    /**
+     * @param $modelPath
+     * @param string $modelName
+     * @param mixed $fillable
+     * @param mixed $guarded
+     * @return void
+     */
+    public function createModelIfNotExist($modelPath, string $modelName, mixed $fillable, mixed $guarded): void
+    {
+        if (!$this->fileExistsOrCreate($modelPath, function () use ($modelName, $fillable, $guarded, $modelPath) {
+            $modelContent = $this->generateModelContent($modelName, $fillable, $guarded);
+            $this->file::put($modelPath, $modelContent);
+            chmod($modelPath, 0777);
+        })) {
+            $this->errors[] = "Model $modelName already exists or failed to create.";
+        }
+    }
+
+    /**
+     * @param $factoryPath
+     * @param string $modelName
+     * @param mixed $fillable
+     * @return void
+     */
+    public function createFactoryIfNotExist($factoryPath, string $modelName, mixed $fillable): void
+    {
+        if (!$this->fileExistsOrCreate($factoryPath, function () use ($modelName, $fillable, $factoryPath) {
+            $factoryContent = $this->generateFactoryContent($modelName, $fillable);
+            $this->file::put($factoryPath, $factoryContent);
+            chmod($factoryPath, 0777);
+        })) {
+            $this->errors[] = "Factory for $modelName already exists or failed to create.";
+        }
     }
 }

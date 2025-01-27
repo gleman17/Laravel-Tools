@@ -428,5 +428,38 @@ info($tableName);
         $visited[$neighborTable] = true;
         return [$connectedModels, $visited];
     }
+    /**
+     * Finds all tables connected to a list of input tables
+     *
+     * @param array<string> $inputTables List of table names to find connections for
+     * @return array<string> List of all connected tables including input tables
+     */
+    public function findConnectedTables(array $inputTables): array
+    {
+        $connectedTables = [];
+        $visited = [];
+        $queue = new \SplQueue();
 
+        foreach ($inputTables as $table) {
+            if (isset($this->adjacencyList[$table])) {
+                $queue->enqueue($table);
+                $visited[$table] = true;
+                $connectedTables[] = $table;
+            }
+        }
+
+        while (!$queue->isEmpty()) {
+            $currentTable = $queue->dequeue();
+
+            foreach (array_keys($this->adjacencyList[$currentTable]) as $neighborTable) {
+                if (!isset($visited[$neighborTable])) {
+                    $visited[$neighborTable] = true;
+                    $connectedTables[] = $neighborTable;
+                    $queue->enqueue($neighborTable);
+                }
+            }
+        }
+
+        return array_unique($connectedTables);
+    }
 }
