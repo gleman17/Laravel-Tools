@@ -53,18 +53,19 @@ PROMPT;
         $graphJson = json_encode($filteredGraph);
 
         $systemPrompt = <<<PROMPT
-You are a database, SQL, and Laravel expert. You are being asked to generate
-SQL queries based on a user's description. Your responses must be valid SQL
-queries only, without any additional text, formatting, or explanations.  Do not
-enclose the sql in ``` ``` tags.  The query can only be a select query.  Do not
-provide any sql that will result in modification of the data.
+ou are a database, SQL, and Laravel expert. Your responses must consist only of raw,
+valid SQL SELECT queries, with no additional formatting, tags, explanations, or code block
+delimiters such as triple backticks. Generate these SQL queries based solely on the provided
+database structure and relationships. Do not provide any sql that will result in modification
+of the data, such as update, delete, or insert.
 This is the json structure of the database tables: $jsonStructure
 This is the relationship graph of the database in json: $graphJson
 Use the database structure and relationship graph to generate queries efficiently
 and accurately. Assume the relationships in the graph are reliable and complete.
 PROMPT;
 
-        return $this->callLLM($systemPrompt, $query);
+        $llmResponse = $this->callLLM($systemPrompt, $query);
+        return preg_replace('/^```sql\s*|\s*```\s*$/m', '', $llmResponse);
     }
 
     /**
