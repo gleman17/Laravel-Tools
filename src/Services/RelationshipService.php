@@ -5,6 +5,7 @@ namespace Gleman17\LaravelTools\Services;
 use PHPSQLParser\PHPSQLParser;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 class RelationshipService
@@ -13,7 +14,6 @@ class RelationshipService
     protected $logger;
     protected $basePath;
     protected $appPath;
-
     private TableRelationshipAnalyzerService $analyzer;
 
     public function __construct($fileSystem = null, $logger = null, $basePath = null, $appPath = null)
@@ -27,14 +27,12 @@ class RelationshipService
 
     /**
      * Convert an SQL query to its Eloquent equivalent
-     *
-     * @param string $sql The SQL query to convert
-     * @return string The equivalent Eloquent query
      */
     public function sqlToEloquent(string $sql): string
     {
         $parser = new PHPSQLParser();
         $parsed = $parser->parse($sql);
+info($parsed);
 
         if (!isset($parsed['FROM']) || !isset($parsed['SELECT'])) {
             throw new \InvalidArgumentException('Invalid SQL query. Must contain SELECT and FROM clauses.');
@@ -45,9 +43,9 @@ class RelationshipService
         $baseModel = $this->getModelNameFromTable($baseTable);
         $query = "$baseModel::query()";
 
-        // Handle joins if present
-        if (isset($parsed['JOIN'])) {
-            $query = $this->handleJoins($query, $baseTable, $parsed['JOIN']);
+        // Handle joins if present in FROM array
+        if (count($parsed['FROM']) > 1) {
+            $query = $this->handleJoins($query, $baseTable, array_slice($parsed['FROM'], 1));
         }
 
         // Handle select fields
@@ -58,19 +56,95 @@ class RelationshipService
             $query = $this->handleWhere($query, $parsed['WHERE']);
         }
 
-        // Handle order by
-        if (isset($parsed['ORDER'])) {
-            $query = $this->handleOrderBy($query, $parsed['ORDER']);
-        }
-
         // Handle group by
         if (isset($parsed['GROUP'])) {
             $query = $this->handleGroupBy($query, $parsed['GROUP']);
         }
 
+        // Handle having
+        if (isset($parsed['HAVING'])) {
+            info('parsed HAVING clause');
+            $query = $this->handleHaving($query, $parsed['HAVING']);
+        }
+
+        // Handle order by
+        if (isset($parsed['ORDER'])) {
+            $query = $this->handleOrderBy($query, $parsed['ORDER']);
+        }
+
         return $query;
     }
 
+    private function handleJoins(string $query, string $baseTable, array $joins): string
+    {
+        $this->analyzer->analyze();
+        $relationships = [];
+        $tables = ['base' => $baseTable];
+
+        foreach ($joins as $join) {
+            if (!isset($join['table']) || !isset($join['ref_clause'])) {
+                continue;
+            }
+
+            $joinTable = $join['table'];
+
+            if (!Schema::hasTable($joinTable)) {
+                throw new \RuntimeException("Table does not exist: $joinTable");
+            }
+
+            // Analyze the join conditions to determine relationship hierarchy
+            $refClause = $join['ref_clause'];
+            $leftTable = $refClause[0]['no_quotes']['parts'][0];
+            $rightTable = $refClause[2]['no_quotes']['parts'][0];
+
+            if ($leftTable === $baseTable) {
+                // Direct relationship with base table
+                $relationships[] = Str::camel(Str::plural($joinTable));
+            } elseif (in_array($leftTable, $tables)) {
+                // Nested relationship
+                $parentRelation = Str::camel(Str::plural($leftTable));
+                $childRelation = Str::camel(Str::plural($joinTable));
+                $relationships[] = $parentRelation . '.' . $childRelation;
+            }
+
+            $tables[] = $joinTable;
+        }
+
+        // Add relationships to query in correct order
+        foreach (array_unique($relationships) as $relation) {
+            $query .= "\n    ->with('$relation')";
+        }
+
+        return $query;
+    }
+
+    private function handleHaving(string $query, array $having): string
+    {
+        $field = null;
+        $operator = null;
+        $value = null;
+
+        foreach ($having as $part) {
+            switch ($part['expr_type']) {
+                case 'alias':
+                case 'colref':
+                    $field = $part['base_expr'];
+                    break;
+                case 'operator':
+                    $operator = $part['base_expr'];
+                    break;
+                case 'const':
+                    $value = $part['base_expr'];
+                    break;
+            }
+        }
+
+        if ($field && $operator && $value !== null) {
+            $query .= "\n    ->having('$field', '$operator', $value)";
+        }
+
+        return $query;
+    }
     /**
      * Convert table name to model name
      */
@@ -80,50 +154,15 @@ class RelationshipService
     }
 
     /**
-     * Handle SQL JOINs by converting them to Eloquent relationship calls
-     */
-    private function handleJoins(string $query, string $baseTable, array $joins): string
-    {
-        $baseModel = $this->getModelNameFromTable($baseTable);
-
-        foreach ($joins as $join) {
-            $joinTable = $join['table'];
-            $joinModel = $this->getModelNameFromTable($joinTable);
-
-            // Find the path between the models using the analyzer
-            $path = $this->analyzer->findPath($baseTable, $joinTable);
-
-            if (empty($path)) {
-                throw new \RuntimeException("No relationship path found between $baseTable and $joinTable");
-            }
-
-            // If it's a direct relationship (path length 2)
-            if (count($path) === 2) {
-                $relationName = $this->getRelationshipName($joinModel, false);
-                $query .= "\n    ->with('$relationName')";
-            } else {
-                // For nested relationships, we need to chain the relationships
-                $relationPath = $this->buildRelationshipPath($path);
-                $query .= "\n    ->with('$relationPath')";
-            }
-        }
-
-        return $query;
-    }
-
-    /**
      * Build a dot-notation relationship path from table path
      */
-    private function buildRelationshipPath(array $path): string
+    private function buildNestedRelationPath(array $path): string
     {
         $relationships = [];
         for ($i = 0; $i < count($path) - 1; $i++) {
-            $currentTable = $path[$i];
             $nextTable = $path[$i + 1];
-            $nextModel = $this->getModelNameFromTable($nextTable);
-            $relationships[] = $this->getRelationshipName($nextModel, false);
+            $relationships[] = Str::camel(Str::plural($nextTable));
         }
-
         return implode('.', $relationships);
     }
 
@@ -134,8 +173,18 @@ class RelationshipService
     {
         $fields = [];
         foreach ($select as $field) {
+            if (!isset($field['expr_type'])) {
+                continue;
+            }
+
             if ($field['expr_type'] === 'colref') {
+                if ($field['base_expr'] === '*') {
+                    return $query;
+                }
                 $fields[] = $field['base_expr'];
+            } elseif ($field['expr_type'] === 'aggregate_function') {
+                $fields[] = $field['base_expr'] . '(' . $field['sub_tree'][0]['base_expr'] . ')' .
+                    (isset($field['alias']) ? ' as ' . $field['alias']['name'] : '');
             }
         }
 
@@ -201,7 +250,9 @@ class RelationshipService
     {
         $groupFields = [];
         foreach ($group as $field) {
-            $groupFields[] = $field['base_expr'];
+            if (isset($field['base_expr'])) {
+                $groupFields[] = $field['base_expr'];
+            }
         }
 
         if (!empty($groupFields)) {
@@ -211,6 +262,8 @@ class RelationshipService
 
         return $query;
     }
+
+
 
     public function removeRelationshipFromModel(string $modelName, string $relationshipName): bool
     {
@@ -236,24 +289,20 @@ class RelationshipService
 
     public function getModelPath(string $modelName): string
     {
-        // Handle absolute paths
         if (str_starts_with($modelName, '/')) {
             return $modelName . '.php';
         }
 
-        // Handle namespaced paths
         if (str_contains($modelName, '\\')) {
             $modelPath = str_replace('\\', '/', $modelName);
             $modelPath = str_replace('App/', 'app/', $modelPath);
             return $this->basePath . '/' . $modelPath . '.php';
         }
 
-        // Handle relative paths
         if (str_contains($modelName, '/')) {
             return $this->basePath . '/' . $modelName . '.php';
         }
 
-        // Handle base model names
         return $this->appPath . "/Models/{$modelName}.php";
     }
 

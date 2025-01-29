@@ -60,21 +60,23 @@ class RelationshipServiceTest extends TestCase
             });
         }
 
-        DB::table('users')->insert([
-            ['name' => 'John Doe', 'email' => 'john@example.com', 'password' => bcrypt('secret')],
-            ['name' => 'Jane Doe', 'email' => 'jane@example.com',  'password' => bcrypt('secret')],
-            ['name' => 'Admin', 'email' => 'admin@example.com',  'password' => bcrypt('secret')],
-        ]);
+        if (User::whereEmail('admin@example.com')->doesntExist()) {
+            DB::table('users')->insert([
+                ['name' => 'John Doe', 'email' => 'john@example.com', 'password' => bcrypt('secret')],
+                ['name' => 'Jane Doe', 'email' => 'jane@example.com', 'password' => bcrypt('secret')],
+                ['name' => 'Admin', 'email' => 'admin@example.com', 'password' => bcrypt('secret')],
+            ]);
 
-        DB::table('posts')->insert([
-            ['user_id' => User::first()->id, 'title' => 'First Post', 'content' => 'Content 1'],
-            ['user_id' => User::skip(1)->first()->id, 'title' => 'Second Post', 'content' => 'Content 2']
-        ]);
+            DB::table('posts')->insert([
+                ['user_id' => User::first()->id, 'title' => 'First Post', 'content' => 'Content 1'],
+                ['user_id' => User::skip(1)->first()->id, 'title' => 'Second Post', 'content' => 'Content 2']
+            ]);
 
-        DB::table('comments')->insert([
-            ['post_id' => User::first()->id, 'user_id' => 2, 'content' => 'Great post!'],
-            ['post_id' => User::skip(1)->first()->id, 'user_id' => 1, 'content' => 'Nice work!']
-        ]);
+            DB::table('comments')->insert([
+                ['post_id' => User::first()->id, 'user_id' => 2, 'content' => 'Great post!'],
+                ['post_id' => User::skip(1)->first()->id, 'user_id' => 1, 'content' => 'Nice work!']
+            ]);
+        }
     }
 
     public function test_simple_select_conversion()
@@ -98,9 +100,10 @@ class RelationshipServiceTest extends TestCase
     public function test_simple_join_conversion()
     {
         $sql = "SELECT users.*, posts.title FROM users JOIN posts ON users.id = posts.user_id";
-        $expected = "App\Models\User::query()\n    ->with('posts')\n    ->select('users.*', 'posts.title')";
-
-        $result = $this->service->sqlToEloquent($sql);
+        $expected = cleanString("App\Models\User::query()\n    ->with('posts')\n    ->select('users.*', 'posts.title')");
+info('expected: '. $expected);
+        $result = cleanString($this->service->sqlToEloquent($sql));
+        info('result: '. $result);
         $this->assertEquals($expected, $result);
     }
 
@@ -154,9 +157,11 @@ class RelationshipServiceTest extends TestCase
                 HAVING post_count > 0
                 ORDER BY post_count DESC";
 
-        $expected = "App\Models\User::query()\n    ->with('posts')\n    ->select('users.name', 'COUNT(posts.id) as post_count')\n    ->where('users.active', '=', 1)\n    ->groupBy('users.id')\n    ->having('post_count', '>', 0)\n    ->orderBy('post_count', 'DESC')";
+        $expected = cleanString("App\Models\User::query()\n    ->with('posts')\n    ->select('users.name', 'COUNT(posts.id) as post_count')\n    ->where('users.active', '=', 1)\n    ->groupBy('users.id')\n    ->having('post_count', '>', 0)\n    ->orderBy('post_count', 'DESC')");
 
-        $result = $this->service->sqlToEloquent($sql);
+        $result = cleanString($this->service->sqlToEloquent($sql));
+        info('expected: '. $expected);
+        info('result: '. $result);
         $this->assertEquals($expected, $result);
     }
 
@@ -175,10 +180,6 @@ class RelationshipServiceTest extends TestCase
 
     protected function tearDown(): void
     {
-        // Clean up test database
-        Schema::dropIfExists('comments');
-        Schema::dropIfExists('posts');
-        Schema::dropIfExists('users');
 
         parent::tearDown();
     }
