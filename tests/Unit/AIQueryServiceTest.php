@@ -12,19 +12,6 @@ use Tests\TestCase;
 
 class AIQueryServiceTest extends TestCase
 {
-    private function cleanString($input) {
-        // Remove all newlines, carriage returns, and tabs
-        $input = preg_replace('/[\r\n\t]/', ' ', $input);
-
-        // Replace multiple spaces with a single space
-        $input = preg_replace('/\s+/', ' ', $input);
-
-        // Trim leading and trailing spaces
-        $input = trim($input);
-
-        return $input;
-    }
-
     /** @test */
     public function it_can_get_the_involved_tables()
     {
@@ -50,6 +37,6 @@ SQL;
         $aiQueryService = new AIQueryService();
         $answer = $aiQueryService->getQuery('show me the number of employees and projects for each company.  the first '.
         'part of the select should be SELECT c.id AS company_id, c.name AS company_name, COUNT(e.id) AS employee_count, COUNT(p.id) AS project_count');
-        $this->assertEquals($this->cleanString($expected), $this->cleanString($answer));
+        $this->assertEquals(cleanString($expected), cleanString($answer));
     }
 }
