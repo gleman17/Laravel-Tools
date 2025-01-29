@@ -10,6 +10,11 @@ use Config;
 
 class AIQueryService
 {
+    public function __construct(TableRelationshipAnalyzerService $analyzerService)
+    {
+        $this->analyzerService = $analyzerService ?? new TableRelationshipAnalyzerService();
+    }
+
     public function getQueryTables($query): array
     {
         $dbTablesJson = json_encode((new DatabaseTableService())->getDatabaseTables());
@@ -42,13 +47,11 @@ PROMPT;
     public function getQuery(string $query): ?string
     {
         $dbTables = $this->getQueryTables($query);
-        $analyzerService = new TableRelationshipAnalyzerService();
-
-        $analyzerService->analyze();
-        $connectedTables = $analyzerService->findConnectedTables($dbTables);
+        $this->analyzerService->analyze();
+        $connectedTables = $this->analyzerService->findConnectedTables($dbTables);
         $jsonStructure = $this->getJsonStructure($connectedTables);
 
-        $graph = $analyzerService->getGraph();
+        $graph = $this->analyzerService->getGraph();
         $filteredGraph = $this->getFilteredGraph($graph, $connectedTables);
         $graphJson = json_encode($filteredGraph);
 
@@ -82,7 +85,7 @@ PROMPT;
             try {
                 // Generate the response
                 $prism = Prism::text()
-                    ->using(Provider::OpenAI, 'gpt-4o-mini');
+                    ->using(Provider::OpenAI, Config('gleman17_laravel_tools.ai_model'));
 
                 if ($systemPrompt !== null) {
                     $prism = $prism->withSystemPrompt($systemPrompt);

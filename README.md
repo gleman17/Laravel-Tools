@@ -32,10 +32,16 @@ relationship.
 ### Requirements
 - Laravel 11 or higher
 - PHP 8.4.1 or higher
+- nikic/php-parser
+- echolabsdev/prism
+- greenlion/php-sql-parser
 - staudenmeir/eloquent-has-many-deep
 - staudenmeir/belongs-to-through
 
 These requirements have not been verified.  The package may work on lower levels.  
+
+You will need to configure Prism with your API key for a compatible LLM.
+
 The staudenmeir packages are only required if you're building the multi-step relationships.  
 The package itself has no dependency upon staudenmeir.
 
