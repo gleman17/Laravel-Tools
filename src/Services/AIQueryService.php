@@ -56,7 +56,7 @@ PROMPT;
         $graphJson = json_encode($filteredGraph);
 
         $systemPrompt = <<<PROMPT
-ou are a database, SQL, and Laravel expert. Your responses must consist only of raw,
+You are a database, SQL, and Laravel expert. Your responses must consist only of raw,
 valid SQL SELECT queries, with no additional formatting, tags, explanations, or code block
 delimiters such as triple backticks. Generate these SQL queries based solely on the provided
 database structure and relationships. Do not provide any sql that will result in modification
