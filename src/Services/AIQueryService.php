@@ -10,7 +10,7 @@ use Config;
 
 class AIQueryService
 {
-    public function __construct(TableRelationshipAnalyzerService $analyzerService)
+    public function __construct(?TableRelationshipAnalyzerService $analyzerService=null)
     {
         $this->analyzerService = $analyzerService ?? new TableRelationshipAnalyzerService();
     }
