@@ -9,32 +9,43 @@ trait HasSqlStrings
     private array $baseKeywords = [
         'SELECT', 'FROM', 'WHERE', 'ORDER BY', 'GROUP BY', 'HAVING', 'LIMIT', 'OFFSET'
     ];
+    private array $joinTypes = ['LEFT', 'RIGHT', 'INNER', 'CROSS', 'FULL'];
+
+    private string $singleColumnSelectPattern = '/^SELECT\s+(\w+)\s+FROM/i';
+    private string $extraWhitespacePattern = '/\s+/';
+    private string $joinPattern = '/\b((?:LEFT|RIGHT|INNER|CROSS|FULL)?\s*JOIN)\b/i';
+
+    private array $unindentedClauses = ['ORDER BY', 'GROUP BY', 'LIMIT', 'OFFSET'];
+    private array $indentedOperators = ['AND', 'OR'];
+
+    private int $doubleIndentSpaces = 8;
 
     public function prettyPrintSQL(string $sql): string
     {
         $sql = $this->normalizeWhitespace($sql);
 
-        // Special handling for single column SELECT
-        if (preg_match('/^SELECT\s+(\w+)\s+FROM/i', $sql, $matches)) {
+        if (preg_match($this->singleColumnSelectPattern, $sql, $matches)) {
             return "SELECT " . $matches[1] . "\nFROM" . substr($sql, stripos($sql, 'FROM') + 4);
         }
 
-        // First normalize all keywords to their uppercase form
         foreach ($this->baseKeywords as $keyword) {
-            $sql = preg_replace('/\b' . preg_quote($keyword, '/') . '\b(?![A-Z])/i', strtoupper($keyword), $sql);
+            $sql = $this->normalizeKeyword($keyword, $sql);
         }
 
-        // Now normalize the JOIN keywords
-        $sql = preg_replace('/\b(LEFT|RIGHT|INNER|CROSS|FULL)\s+JOIN\b/i', '$1 JOIN', $sql);
+        $sql = preg_replace($this->joinPattern, '$1', $sql);
 
-        // Split on keywords
         $lines = $this->splitIntoLines($sql);
         return $this->formatLines($lines);
     }
 
     private function normalizeWhitespace(string $sql): string
     {
-        return preg_replace('/\s+/', ' ', trim($sql));
+        return preg_replace($this->extraWhitespacePattern, ' ', trim($sql));
+    }
+
+    private function normalizeKeyword(string $keyword, string $sql): string
+    {
+        return preg_replace('/\b' . preg_quote($keyword, '/') . '\b(?![A-Z])/i', strtoupper($keyword), $sql);
     }
 
     private function splitIntoLines(string $sql): array
@@ -43,8 +54,7 @@ trait HasSqlStrings
             $sql = preg_replace('/\b' . preg_quote($keyword, '/') . '\b/', "\n" . $keyword, $sql);
         }
 
-        // Handle JOIN statements - make sure to catch the full JOIN phrase
-        $sql = preg_replace('/\b((?:LEFT|RIGHT|INNER|CROSS|FULL)?\s*JOIN)\b/i', "\n$1", $sql);
+        $sql = preg_replace($this->joinPattern, "\n$1", $sql);
 
         return array_filter(array_map('trim', explode("\n", $sql)));
     }
@@ -54,21 +64,13 @@ trait HasSqlStrings
         $formattedLines = [];
         $inSelect = false;
 
-        foreach ($lines as $i => $line) {
+        foreach ($lines as $line) {
             if ($this->startsWithKeyword($line, 'SELECT')) {
-                $formattedLines[] = 'SELECT';
+                $formattedLines = array_merge(
+                    $formattedLines,
+                    $this->formatSelectClause($line)
+                );
                 $inSelect = true;
-
-                // Extract and format columns
-                $columnsStr = substr($line, 6);
-                if ($columnsStr) {
-                    $columns = array_map('trim', explode(',', $columnsStr));
-                    foreach ($columns as $j => $column) {
-                        if (empty(trim($column))) continue;
-                        $formattedLines[] = $this->sqlIndent . $column .
-                            ($j < count($columns) - 1 ? ',' : '');
-                    }
-                }
                 continue;
             }
 
@@ -88,23 +90,37 @@ trait HasSqlStrings
                 continue;
             }
 
-            // Handle major clauses that should never be indented
-            if ($this->startsWithAnyKeyword($line, ['ORDER BY', 'GROUP BY', 'LIMIT', 'OFFSET'])) {
+            if ($this->startsWithAnyKeyword($line, $this->unindentedClauses)) {
                 $formattedLines[] = $line;
                 continue;
             }
 
-            // Handle AND/OR conditions
-            if ($this->startsWithAnyKeyword($line, ['AND', 'OR'])) {
-                $formattedLines[] = $this->sqlIndent . $this->sqlIndent . $line;
+            if ($this->startsWithAnyKeyword($line, $this->indentedOperators)) {
+                $formattedLines[] = str_repeat($this->sqlIndent, 2) . $line;
                 continue;
             }
 
-            // Handle everything else
             $formattedLines[] = ($inSelect ? $this->sqlIndent : '') . $line;
         }
 
         return implode($this->lineBreak, $formattedLines);
+    }
+
+    private function formatSelectClause(string $line): array
+    {
+        $formattedLines = ['SELECT'];
+        $columnsStr = substr($line, 6);
+
+        if ($columnsStr) {
+            $columns = array_map('trim', explode(',', $columnsStr));
+            foreach ($columns as $j => $column) {
+                if (empty(trim($column))) continue;
+                $formattedLines[] = $this->sqlIndent . $column .
+                    ($j < count($columns) - 1 ? ',' : '');
+            }
+        }
+
+        return $formattedLines;
     }
 
     private function formatConditions(string $conditions): array
@@ -113,17 +129,17 @@ trait HasSqlStrings
         $parts = preg_split('/(AND|OR)/i', $conditions, -1, PREG_SPLIT_DELIM_CAPTURE);
 
         if (count($parts) <= 1) {
-            $formattedConditions[] = $this->sqlIndent . $this->sqlIndent . trim($conditions);
+            $formattedConditions[] = str_repeat($this->sqlIndent, 2) . trim($conditions);
             return $formattedConditions;
         }
 
-        $currentLine = $this->sqlIndent . $this->sqlIndent . trim($parts[0]);
+        $currentLine = str_repeat($this->sqlIndent, 2) . trim($parts[0]);
         for ($i = 1; $i < count($parts); $i += 2) {
             $operator = trim($parts[$i]);
             $condition = isset($parts[$i + 1]) ? trim($parts[$i + 1]) : '';
 
             $formattedConditions[] = $currentLine;
-            $currentLine = $this->sqlIndent . $this->sqlIndent . $operator . ' ' . $condition;
+            $currentLine = str_repeat($this->sqlIndent, 2) . $operator . ' ' . $condition;
         }
 
         if ($currentLine) {
