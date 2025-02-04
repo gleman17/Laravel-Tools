@@ -4,6 +4,7 @@ namespace Gleman17\LaravelTools\Services;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Filesystem\Filesystem;
+use Str;
 
 class ModelService
 {
