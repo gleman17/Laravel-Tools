@@ -10,9 +10,13 @@ use Config;
 
 class AIQueryService
 {
-    public function __construct(?TableRelationshipAnalyzerService $analyzerService=null)
+    private TableRelationshipAnalyzerService $analyzerService;
+    private string $provider;
+
+    public function __construct(?TableRelationshipAnalyzerService $analyzerService=null, ?string $provider=null)
     {
         $this->analyzerService = $analyzerService ?? new TableRelationshipAnalyzerService();
+        $this->provider = $provider?? (Config('gleman17_laravel_tools.ai_model')?? 'gpt-4o-mini');
     }
 
     public function getQueryTables($query): array
@@ -24,18 +28,16 @@ Given this sql query, determine the tables that are involved in the query.
  Match terms in the query to the most relevant table names in the database,
  including synonyms.  Your response must only include table names.  If there is
  a synonym, use the table name and not the synonym.  Pick the most specific match
- when there are multiple matches.
+ when there are multiple matches.  Before returning the results, check that the table name
+ exists in the list of tables in the database.
 Respond only with a JSON array of table names. Do not include any additional
 text or formatting.
 This is the query inside quotes: "$query"
 This is the list of tables in the database: $dbTablesJson
 PROMPT;
-        info('getQueryTables');
-        $response = $this->callLLM( null, $prompt);
-        $tables = json_decode($response);
-        info($tables);
-
-        return $tables;
+        $result = $this->callLLM(null, $prompt);
+        info($result);
+        return json_decode($result);
     }
 
     /**
@@ -85,7 +87,7 @@ PROMPT;
             try {
                 // Generate the response
                 $prism = Prism::text()
-                    ->using(Provider::OpenAI, Config('gleman17_laravel_tools.ai_model'));
+                    ->using(Provider::OpenAI, $this->provider);
 
                 if ($systemPrompt !== null) {
                     $prism = $prism->withSystemPrompt($systemPrompt);
