@@ -1,4 +1,7 @@
 <?php
+
+use Illuminate\Support\Facades\Log;
+
 function cleanString($input) {
     // Remove all newlines, carriage returns, and tabs
     $input = preg_replace('/[\r\n\t]/', ' ', $input);
@@ -7,30 +10,17 @@ function cleanString($input) {
     $input = preg_replace('/\s+/', ' ', $input);
 
     // Trim leading and trailing spaces
-    $input = trim($input);
-
-    return $input;
+    return trim($input);
 }
 
-function prettyPrintSQL(string $sql): string
-{
+function prettyPrintSQL(string $sql): string {
     // Remove extra whitespace
     $sql = preg_replace('/\s+/', ' ', trim($sql));
 
     // Major SQL keywords that should start a new line
     $keywords = [
-        'SELECT',
-        'FROM',
-        'WHERE',
-        'JOIN',
-        'LEFT JOIN',
-        'RIGHT JOIN',
-        'INNER JOIN',
-        'GROUP BY',
-        'HAVING',
-        'ORDER BY',
-        'LIMIT',
-        'OFFSET'
+        'SELECT', 'FROM', 'WHERE', 'JOIN', 'LEFT JOIN', 'RIGHT JOIN',
+        'INNER JOIN', 'GROUP BY', 'HAVING', 'ORDER BY', 'LIMIT', 'OFFSET'
     ];
 
     // Add newlines before keywords
