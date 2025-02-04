@@ -12,4 +12,3 @@ function cleanString($input) {
     // Trim leading and trailing spaces
     return trim($input);
 }
-
