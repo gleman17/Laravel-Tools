@@ -1,6 +1,6 @@
 <?php
 
-namespace gleman17\laravel_tools\Traits;
+namespace Gleman17\LaravelTools\Traits;
 
 trait HasSqlStrings
 {
