@@ -34,6 +34,7 @@ class AIQueryServiceTest extends TestCase
         $expected = <<<SQL
 SELECT c.id AS company_id, c.name AS company_name, COUNT(e.id) AS employee_count, COUNT(p.id) AS project_count FROM companies c LEFT JOIN employees e ON c.id = e.company_id LEFT JOIN projects p ON c.id = p.company_id GROUP BY c.id, c.name;
 SQL;
+
         $aiQueryService = new AIQueryService();
         $answer = $aiQueryService->getQuery('show me the number of employees and projects for each company.  the first '.
         'part of the select should be SELECT c.id AS company_id, c.name AS company_name, COUNT(e.id) AS employee_count, COUNT(p.id) AS project_count');
