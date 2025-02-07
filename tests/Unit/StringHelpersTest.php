@@ -3,7 +3,7 @@
 namespace Tests\Unit;
 
 use Tests\TestCase;
-use gleman17\laravel_tools\Traits\HasEloquentStrings;
+use Gleman17\LaravelTools\Traits\HasEloquentStrings;
 
 class StringHelpersTest extends TestCase
 {

@@ -13,42 +13,57 @@ class AIQueryService
     private TableRelationshipAnalyzerService $analyzerService;
     private string $provider;
 
+    /**
+     * @param TableRelationshipAnalyzerService|null $analyzerService
+     * @param string|null $provider
+     */
     public function __construct(?TableRelationshipAnalyzerService $analyzerService=null, ?string $provider=null)
     {
         $this->analyzerService = $analyzerService ?? new TableRelationshipAnalyzerService();
         $this->provider = $provider?? (Config('gleman17_laravel_tools.ai_model')?? 'gpt-4o-mini');
     }
 
-    public function getQueryTables($query): array
+    /**
+     * @param string $query
+     * @param ?array $synonyms
+     * @return array
+     */
+    public function getQueryTables(string $query, ?array $synonyms=[]): array
     {
         $dbTablesJson = json_encode((new DatabaseTableService())->getDatabaseTables());
+info('dbTablesJson: '. $dbTablesJson);
 
         $prompt = <<<PROMPT
-Given this sql query, determine the tables that are involved in the query.
+Given this natural language query, determine the tables that are involved in the query.
  Match terms in the query to the most relevant table names in the database,
  including synonyms.  Your response must only include table names.  If there is
  a synonym, use the table name and not the synonym.  Pick the most specific match
  when there are multiple matches.  Before returning the results, check that the table name
- exists in the list of tables in the database.
-Respond only with a JSON array of table names. Do not include any additional
-text or formatting.
-This is the query inside quotes: "$query"
-This is the list of tables in the database: $dbTablesJson
+ exists in the list of tables in the database.  Table names that are in the form of aaa_bbb where bbb
+ is plural indicate a pivot table between aaa and bbb, so include both aaa, bbb, and the pivot table name
+ in your response.
+ Respond only with a JSON array of table names. Do not include any additional
+ text or formatting.
+ This is the query inside quotes: "$query"
+ This is the list of tables in the database: $dbTablesJson
 PROMPT;
+
+        $prompt = $this->addSynonyms($synonyms, $prompt);
         $result = $this->callLLM(null, $prompt);
+        info('result from getQueryTables: ');
         info($result);
         return json_decode($result);
     }
 
     /**
-     * @param int $check_type
-     * @param $scam_text
-     * @return TextResponse
-     * @throws PrismException
+     * @param string $query
+     * @param array|null $synonyms
+     * @return string|null
      */
-    public function getQuery(string $query): ?string
+    public function getQuery(string $query, ?array $synonyms=[]): ?string
     {
-        $dbTables = $this->getQueryTables($query);
+        $dbTables = $this->getQueryTables($query, $synonyms);
+
         $this->analyzerService->analyze();
         $connectedTables = $this->analyzerService->findConnectedTables($dbTables);
         $jsonStructure = $this->getJsonStructure($connectedTables);
@@ -63,12 +78,16 @@ valid SQL SELECT queries, with no additional formatting, tags, explanations, or 
 delimiters such as triple backticks. Generate these SQL queries based solely on the provided
 database structure and relationships. Do not provide any sql that will result in modification
 of the data, such as update, delete, or insert.
+Table names that are in the form of aaa_bbb where bbb
+ is plural indicate a pivot table between aaa and bbb, so if you are joining with a pivot table,
+ ensure that the output includes both aaa, bbb, and the pivot table name.
 This is the json structure of the database tables: $jsonStructure
 This is the relationship graph of the database in json: $graphJson
 Use the database structure and relationship graph to generate queries efficiently
-and accurately. Assume the relationships in the graph are reliable and complete.
+and accurately. Assume the relationships in the graph are reliable and complete. Verify that any
+columns you use in your SQL queries are actually present in the database.
 PROMPT;
-
+        $systemPrompt = $this->addSynonyms($synonyms, $systemPrompt);
         $llmResponse = $this->callLLM($systemPrompt, $query);
         return preg_replace('/^```sql\s*|\s*```\s*$/m', '', $llmResponse);
     }
@@ -121,8 +140,12 @@ PROMPT;
                 'columns' => (new DatabaseTableService())->getTableColumns($table)
             ];
         }
-
-        return json_encode($structure);
+        return json_encode( array_map(function($table) {
+            return [
+                'table' => $table['table'],
+                'columns' => array_keys($table['columns'])
+            ];
+        }, $structure));
     }
 
     /**
@@ -145,5 +168,24 @@ PROMPT;
         }
 
         return $filteredGraph;
+    }
+
+    /**
+     * @param array|null $synonyms
+     * @param string $prompt
+     * @return string
+     */
+    public function addSynonyms(?array $synonyms, string $prompt): string
+    {
+        if (count($synonyms) > 0) {
+            $jsonSynonyms = json_encode($synonyms);
+            $prompt .= <<<PROMPT
+In addition to synonyms for tables that you may determine, the user has also provided a list of domain specific
+synonyms in the form of a json array in the format of {"synonym":"table_name"}.  These synonyms should take
+precedence over the synonyms that you detect in the natural language query.
+This is the list of synonyms: $jsonSynonyms
+PROMPT;
+        }
+        return $prompt;
     }
 }

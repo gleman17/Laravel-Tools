@@ -1,8 +1,22 @@
 # Laravel Tools
 
-A Laravel package to simplify relationship management, model analysis, and table-to-model comparison. This package provides a set of Artisan commands for developers working with complex database relationships in Laravel applications.
+Laravel Tools is a package designed to enhance developer productivity by providing a natural language query interface.  You can
+describe the data you're looking for in plain english and it will convert that to an SQL query as well as an Eloquent query.
+This package also provides tools for simplifying relationship management, model analysis, and table-to-model comparisons in 
+Laravel applications.  It provides a suite of Artisan commands to assist developers in managing complex database relationships 
+efficiently.
 
-Why would you need this?  Can't you just create relationships on your models by hand?
+Why would you need this?  Can't you just dump the metadate from your database to a file, load that into an LLLM, and get
+your query?  Yes, you can do this for small databases, but with larger databases you may run into problems with costs (those
+tokens aren't free) and the LLM might hallucinate some tables and relationships that it thinks should be there but actually aren't.
+This package takes a different approach.  It analyzes the query to see what entities are described, then it builds a graph of the
+database and returns the metadata showing the relationships between tables for only those tables that are required to perform 
+the query.  For example, if if your query was "Show me all users that have been created in the last week that have added a comment" 
+it would determine that to answer this you need the users, posts, and comments table.  It would provide the metadata for just
+those tables to the LLM and let it refine the query further.
+
+
+Can't you just create relationships on your models by hand?
 
 This package goes a bit further.  It adds commands that allow you to update the relationships on your models.
 It builds a graph of the database structure to determine the connections between tables.  It uses the Laravel naming 
@@ -22,6 +36,7 @@ relationship.
 
 ## Features
 
+- **Natural language query**: Describe what you want and it returns SQL and Eloquent
 - **Build Relationships**: Automatically generate Eloquent relationships between models.
 - **Compare Tables with Models**: Detect database tables without corresponding models and optionally generate them.
 - **List Models**: List all models in your Laravel project.
@@ -31,7 +46,7 @@ relationship.
 
 ### Requirements
 - Laravel 11 or higher
-- PHP 8.4.1 or higher
+- PHP 8.3 or higher
 - nikic/php-parser
 - echolabsdev/prism
 - greenlion/php-sql-parser
@@ -40,7 +55,8 @@ relationship.
 
 These requirements have not been verified.  The package may work on lower levels.  
 
-You will need to configure Prism with your API key for a compatible LLM.
+You will need to configure Prism with your API key for a compatible LLM.  You can configure as many LLMs as you wish,
+limited only by Prism's large list of supported LLMs.
 
 The staudenmeir packages are only required if you're building the multi-step relationships.  
 The package itself has no dependency upon staudenmeir.
@@ -51,6 +67,7 @@ To install this package in your Laravel project:
 ```bash
 composer require gleman17/laravel_tools
 ```
+Follow the instructions to configure Prism.
 
 ### Publish Configuration (Optional)
 You can publish the configuration file to customize command signatures:

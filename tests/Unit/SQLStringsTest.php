@@ -3,7 +3,7 @@
 namespace Tests\Unit;
 
 use Tests\TestCase;
-use gleman17\laravel_tools\Traits\HasSqlStrings;
+use Gleman17\LaravelTools\Traits\HasSqlStrings;
 
 class SQLStringsTest extends TestCase
 {

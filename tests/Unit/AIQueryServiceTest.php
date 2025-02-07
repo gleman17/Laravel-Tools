@@ -40,4 +40,20 @@ SQL;
         'part of the select should be SELECT c.id AS company_id, c.name AS company_name, COUNT(e.id) AS employee_count, COUNT(p.id) AS project_count');
         $this->assertEquals(cleanString($expected), cleanString($answer));
     }
+
+    /** @test */
+    public function it_can_query_the_db_with_questionable_synonym()
+    {
+        $expected = <<<SQL
+SELECT users.id, users.name, users.email
+FROM users
+JOIN scam_check_users ON users.id = scam_check_users.user_id
+JOIN scam_checks ON scam_check_users.scam_check_id = scam_checks.id
+WHERE users.is_admin = 1;
+SQL;
+
+        $aiQueryService = new AIQueryService();
+        $answer = $aiQueryService->getQuery('show me users who are admins that have scams', ['scams' => 'scam_checks']);
+        $this->assertEquals(cleanString($expected), cleanString($answer));
+    }
 }
