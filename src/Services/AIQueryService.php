@@ -31,28 +31,28 @@ class AIQueryService
     public function getQueryTables(string $query, ?array $synonyms=[]): array
     {
         $dbTablesJson = json_encode((new DatabaseTableService())->getDatabaseTables());
-info('dbTablesJson: '. $dbTablesJson);
 
         $prompt = <<<PROMPT
 Given this natural language query, determine the tables that are involved in the query.
  Match terms in the query to the most relevant table names in the database,
  including synonyms.  Your response must only include table names.  If there is
- a synonym, use the table name and not the synonym.  Pick the most specific match
- when there are multiple matches.  Before returning the results, check that the table name
+ a synonym, use the table name and not the synonym.  If there are multiple matches between
+ synonyms and tables, chose the most specific match.  Do not include any additional matches, just pick the best one.
+ Before returning the results, check that the table name
  exists in the list of tables in the database.  Table names that are in the form of aaa_bbb where bbb
  is plural indicate a pivot table between aaa and bbb, so include both aaa, bbb, and the pivot table name
  in your response.
- Respond only with a JSON array of table names. Do not include any additional
- text or formatting.
+ Your output should be in the following json format:
+ {"tables": array_of_table_names, "reasoning": "Your reasoning here"}
+ Do not include any additional text or formatting.
  This is the query inside quotes: "$query"
  This is the list of tables in the database: $dbTablesJson
 PROMPT;
 
         $prompt = $this->addSynonyms($synonyms, $prompt);
         $result = $this->callLLM(null, $prompt);
-        info('result from getQueryTables: ');
-        info($result);
-        return json_decode($result);
+        $decodedResult = json_decode($result, True);
+        return $decodedResult['tables'];
     }
 
     /**
@@ -81,6 +81,8 @@ of the data, such as update, delete, or insert.
 Table names that are in the form of aaa_bbb where bbb
  is plural indicate a pivot table between aaa and bbb, so if you are joining with a pivot table,
  ensure that the output includes both aaa, bbb, and the pivot table name.
+ When creating a join clause, the left side of the "on" clause should be the key of the table being joined.  A correct
+ example: JOIN posts ON posts.user_id = users.id.  This would be wrong: JOIN posts ON users.id = posts.user_id.
 This is the json structure of the database tables: $jsonStructure
 This is the relationship graph of the database in json: $graphJson
 Use the database structure and relationship graph to generate queries efficiently

@@ -32,7 +32,11 @@ class AIQueryServiceTest extends TestCase
     public function it_can_query_the_db_with_joins()
     {
         $expected = <<<SQL
-SELECT c.id AS company_id, c.name AS company_name, COUNT(e.id) AS employee_count, COUNT(p.id) AS project_count FROM companies c LEFT JOIN employees e ON c.id = e.company_id LEFT JOIN projects p ON c.id = p.company_id GROUP BY c.id, c.name;
+SELECT c.id AS company_id, c.name AS company_name, COUNT(e.id) AS employee_count, COUNT(p.id) AS project_count
+FROM companies c
+    LEFT JOIN employees e ON e.company_id = c.id
+    LEFT JOIN projects p ON p.company_id = c.id
+GROUP BY c.id, c.name;
 SQL;
 
         $aiQueryService = new AIQueryService();
@@ -47,8 +51,8 @@ SQL;
         $expected = <<<SQL
 SELECT users.id, users.name, users.email
 FROM users
-JOIN scam_check_users ON users.id = scam_check_users.user_id
-JOIN scam_checks ON scam_check_users.scam_check_id = scam_checks.id
+JOIN scam_check_users ON scam_check_users.user_id = users.id
+JOIN scam_checks ON scam_checks.id = scam_check_users.scam_check_id
 WHERE users.is_admin = 1;
 SQL;
 
