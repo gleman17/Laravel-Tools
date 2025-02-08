@@ -43,8 +43,6 @@ class AnalyzeMethodUsageCommand extends Command
         $outputFile = $this->option('output');
         $minCalls = (int) $this->option('min-calls');
 
-        $this->info('Starting method usage analysis...');
-
         try {
             $analyzer = new AnalyzeMethodService(
                 function ($current, $total, $phase) {

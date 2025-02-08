@@ -101,9 +101,7 @@ class RelationshipServiceTest extends TestCase
     {
         $sql = "SELECT users.*, posts.title FROM users JOIN posts ON users.id = posts.user_id";
         $expected = cleanString("App\Models\User::query()\n    ->with('posts')\n    ->select('users.*', 'posts.title')");
-info('expected: '. $expected);
         $result = cleanString($this->service->sqlToEloquent($sql));
-        info('result: '. $result);
         $this->assertEquals($expected, $result);
     }
 
@@ -160,8 +158,6 @@ info('expected: '. $expected);
         $expected = cleanString("App\Models\User::query()\n    ->with('posts')\n    ->select('users.name', 'COUNT(posts.id) as post_count')\n    ->where('users.active', '=', 1)\n    ->groupBy('users.id')\n    ->having('post_count', '>', 0)\n    ->orderBy('post_count', 'DESC')");
 
         $result = cleanString($this->service->sqlToEloquent($sql));
-        info('expected: '. $expected);
-        info('result: '. $result);
         $this->assertEquals($expected, $result);
     }
 

@@ -32,7 +32,6 @@ class RelationshipService
     {
         $parser = new PHPSQLParser();
         $parsed = $parser->parse($sql);
-info($parsed);
 
         if (!isset($parsed['FROM']) || !isset($parsed['SELECT'])) {
             throw new \InvalidArgumentException('Invalid SQL query. Must contain SELECT and FROM clauses.');
@@ -63,7 +62,6 @@ info($parsed);
 
         // Handle having
         if (isset($parsed['HAVING'])) {
-            info('parsed HAVING clause');
             $query = $this->handleHaving($query, $parsed['HAVING']);
         }
 

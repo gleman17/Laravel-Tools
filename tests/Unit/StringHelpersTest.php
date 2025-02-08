@@ -50,8 +50,6 @@ User::query()
     ->get()
 EOT;
         $result = $this->prettyPrintEloquent($input);
-        info($expected);
-        info($result);
         $this->assertEquals($expected, $result);
     }
 
@@ -72,8 +70,6 @@ User::query()
 EOT;
 
         $result = $this->prettyPrintEloquent($input);
-        info($expected);
-        info($result);
         $this->assertEquals($expected, $result);
     }
 }
