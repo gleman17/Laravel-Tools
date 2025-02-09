@@ -6,10 +6,29 @@ This package also provides tools for simplifying relationship management, model 
 Laravel applications.  It provides a suite of Artisan commands to assist developers in managing complex database relationships 
 efficiently.
 
+Here's how easy it is:
+```php
+use Gleman17\LaravelTools\Services\AIQueryService;
+
+        $aiQueryService = new AIQueryService();
+        $answer = $aiQueryService->getQuery('show me users that have posts without any comments');
+```
+```sql
+        SELECT users.id, users.name, users.email 
+        FROM users
+        JOIN posts ON posts.user_id = users.id
+        LEFT JOIN comments ON comments.post_id = posts.id
+        GROUP BY users.id
+        HAVING COUNT(comments.id) = 0;
+```
 Why would you need this?  Can't you just dump the metadate from your database to a file, load that into an LLLM, and get
-your query?  Yes, you can do this for small databases, but with larger databases you may run into problems with costs (those
+your query?  
+
+Yes, you can do this for small databases, but with larger databases you may run into problems with costs (those
 tokens aren't free) and the LLM might hallucinate some tables and relationships that it thinks should be there but actually aren't.
-This package takes a different approach.  It analyzes the query to see what entities are described, then it builds a graph of the
+
+This package takes a different approach.  The key is to limit the amount of metadate the LLM needs to look at in order to formulate
+the query.  It does this by analyzing the query to see what entities are described, then it builds a graph of the
 database and returns the metadata showing the relationships between tables for only those tables that are required to perform 
 the query.  For example, if if your query was "Show me all users that have been created in the last week that have added a comment" 
 it would determine that to answer this you need the users, posts, and comments table.  It would provide the metadata for just
