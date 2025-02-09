@@ -17,12 +17,12 @@ $answer = $aiQueryService->getQuery('show me users that have posts without any c
 Here's the sql that will be contained within $answer:
 
 ```sql
-        SELECT users.id, users.name, users.email 
-        FROM users
-        JOIN posts ON posts.user_id = users.id
-        LEFT JOIN comments ON comments.post_id = posts.id
-        GROUP BY users.id
-        HAVING COUNT(comments.id) = 0;
+SELECT users.id, users.name, users.email 
+FROM users
+JOIN posts ON posts.user_id = users.id
+LEFT JOIN comments ON comments.post_id = posts.id
+GROUP BY users.id
+HAVING COUNT(comments.id) = 0;
 ```
 Why would you need this?  Can't you just dump the metadate from your database to a file, load that into an LLLM, and get
 your query?  
