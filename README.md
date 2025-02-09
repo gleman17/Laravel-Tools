@@ -10,9 +10,12 @@ Here's how easy it is:
 ```php
 use Gleman17\LaravelTools\Services\AIQueryService;
 
-        $aiQueryService = new AIQueryService();
-        $answer = $aiQueryService->getQuery('show me users that have posts without any comments');
+$aiQueryService = new AIQueryService();
+$answer = $aiQueryService->getQuery('show me users that have posts without any comments');
 ```
+
+Here's the sql that will be contained within $answer:
+
 ```sql
         SELECT users.id, users.name, users.email 
         FROM users
