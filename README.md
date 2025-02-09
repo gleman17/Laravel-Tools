@@ -37,6 +37,15 @@ the query.  For example, if if your query was "Show me all users that have been 
 it would determine that to answer this you need the users, posts, and comments table.  It would provide the metadata for just
 those tables to the LLM and let it refine the query further.
 
+```sql
+SELECT users.id, users.name, users.email, 
+       comments.id AS comment_id, comments.content, comments.created_at AS comment_created_at, 
+       posts.id AS post_id, posts.title AS post_title
+FROM users
+JOIN comments ON comments.user_id = users.id
+JOIN posts ON posts.id = comments.post_id
+WHERE users.created_at >= NOW() - INTERVAL 7 DAY;
+```
 
 Can't you just create relationships on your models by hand?
 

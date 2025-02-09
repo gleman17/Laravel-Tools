@@ -106,8 +106,8 @@ JOIN comments ON comments.user_id = users.id
 WHERE users.created_at >= NOW() - INTERVAL 7 DAY;
 SQL;
 
-        $answer = $aiQueryService->getQuery('Show me all users that have been created in the last week that have added a comment and their comments');
-
+        $answer = $aiQueryService->getQuery('Show me all users that have been created in the last week that have added a comment with the post and their comments');
+var_dump($answer);
         $this->assertStringContainsStringIgnoringCase('JOIN comments ON comments.user_id = users.id', cleanString($answer), "SQL must LEFT JOIN comments on users.id.");
         $this->assertMatchesRegularExpression('/WHERE users\.created_at >= NOW\(\) - INTERVAL 7 DAY/i', cleanString($answer), "SQL must filter users by created_at in the last 7 days.");
     }
