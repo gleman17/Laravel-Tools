@@ -60,4 +60,55 @@ SQL;
         $answer = $aiQueryService->getQuery('show me users who are admins that have scams', ['scams' => 'scam_checks']);
         $this->assertEquals(cleanString($expected), cleanString($answer));
     }
+
+    /** @test */
+    public function it_can_query_relationship_missing()
+    {
+        $aiQueryService = new AIQueryService();
+        $expected = <<<SQL
+SELECT users.id, users.name, users.email FROM users
+JOIN posts ON posts.user_id = users.id
+LEFT JOIN comments ON comments.post_id = posts.id
+GROUP BY users.id
+HAVING COUNT(comments.id) = 0;
+SQL;
+
+        $answer = $aiQueryService->getQuery('show me users that have posts without any comments');
+        var_dump($answer);
+        $this->assertEquals(cleanString($expected), cleanString($answer));
+    }
+
+    /** @test */
+    public function it_can_query_relationship_existing()
+    {
+        $aiQueryService = new AIQueryService();
+        $expected = <<<SQL
+SELECT users.id, users.name, users.email, users.created_at
+FROM users
+JOIN comments ON comments.user_id = users.id
+WHERE users.created_at >= NOW() - INTERVAL 7 DAY;
+SQL;
+
+        $answer = $aiQueryService->getQuery('Show me all users that have been created in the last week that have added a comment');
+        var_dump($answer);
+        $this->assertEquals(cleanString($expected), cleanString($answer));
+    }
+
+
+    /** @test */
+    public function it_can_select_multiple_tables()
+    {
+        $aiQueryService = new AIQueryService();
+        $expected = <<<SQL
+SELECT users.id, users.name, users.email, users.created_at,  comments.id AS comment_id, comments.content
+FROM users
+JOIN comments ON comments.user_id = users.id
+WHERE users.created_at >= NOW() - INTERVAL 7 DAY;
+SQL;
+
+        $answer = $aiQueryService->getQuery('Show me all users that have been created in the last week that have added a comment and their comments');
+
+        $this->assertStringContainsStringIgnoringCase('JOIN comments ON comments.user_id = users.id', cleanString($answer), "SQL must LEFT JOIN comments on users.id.");
+        $this->assertMatchesRegularExpression('/WHERE users\.created_at >= NOW\(\) - INTERVAL 7 DAY/i', cleanString($answer), "SQL must filter users by created_at in the last 7 days.");
+    }
 }

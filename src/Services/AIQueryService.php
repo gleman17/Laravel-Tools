@@ -72,23 +72,7 @@ PROMPT;
         $filteredGraph = $this->getFilteredGraph($graph, $connectedTables);
         $graphJson = json_encode($filteredGraph);
 
-        $systemPrompt = <<<PROMPT
-You are a database, SQL, and Laravel expert. Your responses must consist only of raw,
-valid SQL SELECT queries, with no additional formatting, tags, explanations, or code block
-delimiters such as triple backticks. Generate these SQL queries based solely on the provided
-database structure and relationships. Do not provide any sql that will result in modification
-of the data, such as update, delete, or insert.
-Table names that are in the form of aaa_bbb where bbb
- is plural indicate a pivot table between aaa and bbb, so if you are joining with a pivot table,
- ensure that the output includes both aaa, bbb, and the pivot table name.
- When creating a join clause, the left side of the "on" clause should be the key of the table being joined.  A correct
- example: JOIN posts ON posts.user_id = users.id.  This would be wrong: JOIN posts ON users.id = posts.user_id.
-This is the json structure of the database tables: $jsonStructure
-This is the relationship graph of the database in json: $graphJson
-Use the database structure and relationship graph to generate queries efficiently
-and accurately. Assume the relationships in the graph are reliable and complete. Verify that any
-columns you use in your SQL queries are actually present in the database.
-PROMPT;
+        $systemPrompt = $this->getSystemPrompt($jsonStructure, $graphJson);
         $systemPrompt = $this->addSynonyms($synonyms, $systemPrompt);
         $llmResponse = $this->callLLM($systemPrompt, $query);
         return preg_replace('/^```sql\s*|\s*```\s*$/m', '', $llmResponse);
@@ -189,5 +173,44 @@ This is the list of synonyms: $jsonSynonyms
 PROMPT;
         }
         return $prompt;
+    }
+
+    /**
+     * @param bool|string $jsonStructure
+     * @param bool|string $graphJson
+     * @return string
+     */
+    public function getSystemPrompt(bool|string $jsonStructure, bool|string $graphJson): string
+    {
+        $systemPrompt = <<<PROMPT
+You are a database, SQL, and Laravel expert. Your responses must consist only of raw,
+valid SQL SELECT queries, with no additional formatting, tags, explanations, or code block
+delimiters such as triple backticks. Generate these SQL queries based solely on the provided
+database structure and relationships.
+
+Do not provide any sql that will result in modification of the data, such as update, delete, or insert.
+
+Table names that are in the form of aaa_bbb where bbb is plural indicate a pivot table between aaa and bbb,
+so if you are joining with a pivot table, ensure that the output includes both aaa, bbb, and the pivot table name.
+
+When creating a join clause, the left side of the "on" clause should be the key of the table being joined.  A correct
+example: JOIN posts ON posts.user_id = users.id.  This would be wrong: JOIN posts ON users.id = posts.user_id.
+
+Determine which entities have been explicitly asked for when generating the columns to include in a select. If joins are
+required to perform the query, determine if they asked for the joined entities in the columns to be returned.
+For instance, "show users with posts" should generate a query that only retrieves the columns in the users table since
+posts were not asked for but were only part of the limiting conditions.
+
+If an entity has been asked for, include all of the columns mentioned for that entity, even if they are in a condition.
+
+This is the json structure of the database tables: $jsonStructure
+
+This is the relationship graph of the database in json: $graphJson
+
+Use the database structure and relationship graph to generate queries efficiently
+and accurately. Assume the relationships in the graph are reliable and complete. Verify that any
+columns you use in your SQL queries are actually present in the database.
+PROMPT;
+        return $systemPrompt;
     }
 }
