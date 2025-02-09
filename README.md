@@ -107,7 +107,7 @@ You can publish the configuration file to customize command signatures:
 php artisan vendor:publish --tag=laravel-tools-config
 ```
 
-This will create a `config/laravel_tools.php` file where you can configure command signatures and other options.
+This will create a `config/gleman17_laravel_tools.php` file where you can configure command signatures and other options.
 
 The namespace for the commands is "tools" but you can modify this by
 changing the config file:
@@ -205,19 +205,123 @@ php artisan tools:remove-relationships User Role
 ```
 
 ---
+# Laravel Tools - Natural Language SQL Query Generator
 
-## Configuration File
-After publishing the configuration, you can modify the command signatures or disable specific commands in `config/laravel_tools.php`:
+This package provides a powerful natural language to SQL query converter for Laravel applications. It allows you to transform human-readable queries into optimized SQL, taking into account your database structure and relationships.
+
+## Installation
+
+You can install the package via composer:
+
+```bash
+composer require gleman17/laravel-tools
+```
+
+## Configuration
+
+Publish the configuration file:
+
+```bash
+php artisan vendor:publish --provider="Gleman17\LaravelTools\LaravelToolsServiceProvider"
+```
+
+In the published configuration file `config/gleman17_laravel_tools.php`, you can set your preferred AI model:
 
 ```php
 return [
-    'command_signatures' => [
-        'build_relationships' => 'tools:build-relationships',
-        'compare_tables' => 'tools:compare-tables',
-        'list_models' => 'tools:list-models',
-        'remove_relationships' => 'tools:remove-relationships',
-    ],
+    'ai_model' => 'gpt-4-0-mini',  // or your preferred model
 ];
+```
+
+## Basic Usage
+
+### Converting Natural Language to SQL
+
+```php
+use Gleman17\LaravelTools\Services\AIQueryService;
+
+$queryService = new AIQueryService();
+
+// Get SQL from natural language query
+$query = "show me all users who have posted in the last month";
+$sql = $queryService->getQuery($query);
+
+// Execute the generated SQL
+$results = DB::select($sql);
+```
+
+### Working with Table Synonyms
+
+You can provide domain-specific synonyms to improve query accuracy:
+
+```php
+$synonyms = [
+    'customer' => 'users',
+    'article' => 'posts'
+];
+
+$query = "find all customers who have written articles";
+$sql = $queryService->getQuery($query, $synonyms);
+```
+
+### Getting Query Details
+
+The service provides methods to understand how queries are interpreted:
+
+```php
+// Get tables involved in the query
+$tables = $queryService->getQueryTables($query);
+
+// Get reasoning behind table selection
+$tableReasoning = $queryService->getTablesReasoning();
+
+// Get reasoning behind SQL generation
+$queryReasoning = $queryService->getQueryReasoning();
+```
+
+### Additional Query Rules
+
+You can provide additional rules to customize SQL generation:
+
+```php
+$additionalRules = "Always include soft delete checks in the where clause";
+$sql = $queryService->getQuery($query, $synonyms, $additionalRules);
+```
+
+## Features
+
+- Natural language to SQL conversion
+- Automatic table relationship detection
+- Support for table synonyms
+- Handles pivot tables automatically
+- Provides reasoning for query generation
+- Configurable AI model selection
+- Retry mechanism for API calls
+- Smart column selection based on query context
+
+## Best Practices
+
+1. **Be Careful**: Be extraordinarily cautious about exposing this interface to users as it could be used to violate security. 
+Even if you add rules such as "always add organization_id = 10 to a where clause" validate that the generated SQL cannot be used
+to expose data.
+
+2. **Use Synonyms**: If your domain uses specific terminology, provide synonyms to improve accuracy.
+
+3. **Review Generated SQL**: Initially review generated SQL queries to ensure they match your expectations.
+
+4. **Monitor API Usage**: Since the service uses AI models, be mindful of API usage and implement appropriate rate limiting.
+
+## Error Handling
+
+The service implements retry logic for API calls and returns null if the query generation fails after multiple attempts. It's recommended to implement appropriate error handling:
+
+```php
+$sql = $queryService->getQuery($query);
+if ($sql === null) {
+    // Handle the error case
+    Log::error('Failed to generate SQL query');
+    return false;
+}
 ```
 
 ## Contributing
