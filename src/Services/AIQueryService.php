@@ -13,6 +13,9 @@ class AIQueryService
     private TableRelationshipAnalyzerService $analyzerService;
     private string $provider;
 
+    private string $queryReasoning;
+    private string $tablesReasoning;
+
     /**
      * @param TableRelationshipAnalyzerService|null $analyzerService
      * @param string|null $provider
@@ -52,15 +55,22 @@ PROMPT;
         $prompt = $this->addSynonyms($synonyms, $prompt);
         $result = $this->callLLM(null, $prompt);
         $decodedResult = json_decode($result, True);
+        $this->tablesReasoning = $decodedResult['reasoning'];
         return $decodedResult['tables'];
+    }
+
+    public function getTablesReasoning(): string
+    {
+        return $this->tablesReasoning;
     }
 
     /**
      * @param string $query
      * @param array|null $synonyms
+     * @param string|null $additionalRules
      * @return string|null
      */
-    public function getQuery(string $query, ?array $synonyms=[]): ?string
+    public function getQuery(string $query, ?array $synonyms=[], ?string $additionalRules=null): ?string
     {
         $dbTables = $this->getQueryTables($query, $synonyms);
 
@@ -74,12 +84,25 @@ PROMPT;
 
         $systemPrompt = $this->getSystemPrompt($jsonStructure, $graphJson);
         $systemPrompt = $this->addSynonyms($synonyms, $systemPrompt);
+        if ($additionalRules!== null) {
+            $systemPrompt.= "\n\n". $additionalRules;
+        }
+        $systemPrompt.= "\n\nYour output must be in the following json format: {\"sql\": \"generated sql\", \"reasoning\": \"Your reasoning here\"}";
+
         $llmResponse = $this->callLLM($systemPrompt, $query);
-        return preg_replace('/^```sql\s*|\s*```\s*$/m', '', $llmResponse);
+        $decodedResult = json_decode($llmResponse, True);
+        $this->queryReasoning = $decodedResult['reasoning'];
+
+        return preg_replace('/^```sql\s*|\s*```\s*$/m', '', $decodedResult['sql']);
+    }
+
+    public function getQueryReasoning(): string
+    {
+        return $this->queryReasoning;
     }
 
     /**
-     * @param string $systemPrompt
+     * @param string|null $systemPrompt
      * @param string $prompt
      * @return string|null
      */
