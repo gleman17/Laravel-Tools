@@ -323,6 +323,120 @@ if ($sql === null) {
     return false;
 }
 ```
+# Database Table Service
+
+The `DatabaseTableService` provides a database-agnostic way to retrieve metadata about your database tables and columns. It supports MySQL, PostgreSQL, SQLite, and SQL Server databases.
+
+## Basic Usage
+
+```php
+use Gleman17\LaravelTools\Services\DatabaseTableService;
+
+$service = new DatabaseTableService();
+```
+
+### Getting All Database Tables
+
+Retrieve a list of all tables in your database:
+
+```php
+$tables = $service->getDatabaseTables();
+// Returns: ['users', 'posts', 'comments', ...]
+```
+
+### Getting Table Column Information
+
+Get detailed information about all columns in a specific table:
+
+```php
+$columns = $service->getTableColumns('users');
+// Returns:
+// [
+//     'id' => [
+//         'type' => 'integer',
+//         'nullable' => false,
+//         'default' => null,
+//         'key' => 'PRI'
+//     ],
+//     'email' => [
+//         'type' => 'varchar',
+//         'nullable' => false,
+//         'default' => null
+//     ],
+//     // ...
+// ]
+```
+
+### Getting Complete Database Metadata
+
+Retrieve metadata for all tables and their columns:
+
+```php
+$metadata = $service->getMetadata();
+// Returns:
+// [
+//     'users' => [
+//         'id' => ['type' => 'integer', ...],
+//         'email' => ['type' => 'varchar', ...],
+//         // ...
+//     ],
+//     'posts' => [
+//         // ...
+//     ]
+// ]
+```
+
+### Model and Relationship Name Utilities
+
+Convert table names to model names:
+
+```php
+$modelName = $service->tableToModelName('blog_posts');
+// Returns: 'BlogPost'
+```
+
+Convert foreign key names to relationship names:
+
+```php
+$relationName = $service->foreignKeyToRelationName('user_id');
+// Returns: 'users'
+```
+
+## Supported Databases
+
+The service automatically detects and supports the following database drivers:
+- MySQL
+- PostgreSQL
+- SQLite
+- SQL Server
+
+For each database type, the service retrieves:
+- Column names
+- Data types
+- Nullability
+- Default values
+- Key information (where applicable)
+
+## Error Handling
+
+The service will throw a `RuntimeException` if:
+- An unsupported database driver is detected
+- Database queries fail to execute
+
+Example error handling:
+
+```php
+try {
+    $columns = $service->getTableColumns('users');
+} catch (\RuntimeException $e) {
+    Log::error('Failed to get table columns: ' . $e->getMessage());
+    // Handle the error appropriately
+}
+```
+
+## Performance Considerations
+
+The service implements internal caching of table metadata to prevent repeated database queries. Once table information is retrieved, it's stored for the duration of the request lifecycle.
 
 ## Contributing
 Feel free to submit issues or pull requests to improve this package.
