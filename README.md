@@ -209,21 +209,7 @@ php artisan tools:remove-relationships User Role
 
 This package provides a powerful natural language to SQL query converter for Laravel applications. It allows you to transform human-readable queries into optimized SQL, taking into account your database structure and relationships.
 
-## Installation
-
-You can install the package via composer:
-
-```bash
-composer require gleman17/laravel-tools
-```
-
 ## Configuration
-
-Publish the configuration file:
-
-```bash
-php artisan vendor:publish --provider="Gleman17\LaravelTools\LaravelToolsServiceProvider"
-```
 
 In the published configuration file `config/gleman17_laravel_tools.php`, you can set your preferred AI model:
 
