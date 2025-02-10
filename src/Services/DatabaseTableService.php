@@ -6,6 +6,8 @@ use Illuminate\Support\Facades\DB;
 class DatabaseTableService
 {
 
+    private array $tableMetadata;
+
     public function getMetadata(): array
     {
         $tables = $this->getDatabaseTables();
@@ -152,5 +154,10 @@ class DatabaseTableService
         // e.g., "varchar(255)" becomes "varchar"
         preg_match('/^([a-z]+)/', $type, $matches);
         return $matches[1] ?? $type;
+    }
+
+    public function getTableMetadata(): array
+    {
+        return $this->tableMetadata;
     }
 }
