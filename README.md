@@ -424,6 +424,109 @@ try {
 
 The service implements internal caching of table metadata to prevent repeated database queries. Once table information is retrieved, it's stored for the duration of the request lifecycle.
 
+## Available Traits
+
+### HasEloquentStrings
+
+The `HasEloquentStrings` trait provides pretty-printing capabilities for Eloquent query chains. It helps format complex Eloquent queries into a more readable, properly indented structure.
+
+#### Usage
+
+```php
+use Gleman17\LaravelTools\Traits\HasEloquentStrings;
+
+class YourClass
+{
+    use HasEloquentStrings;
+
+    public function example()
+    {
+        $uglyQuery = '$query->where("active", true)->whereHas("posts", function($query) { $query->where("published", true)->whereNull("deleted_at"); })->orderBy("created_at")';
+        
+        $prettyQuery = $this->prettyPrintEloquent($uglyQuery);
+        // Result:
+        // $query
+        //     ->where("active", true)
+        //     ->whereHas("posts", function($query) {
+        //         $query->where("published", true)
+        //             ->whereNull("deleted_at");
+        //     })
+        //     ->orderBy("created_at")
+    }
+}
+```
+
+#### Features
+
+- Properly indents method chains with 4 spaces
+- Formats closure contents with additional indentation
+- Handles nested method chains within closures
+- Maintains proper brace and semicolon placement
+- Preserves query functionality while improving readability
+
+### HasSqlStrings
+
+The `HasSqlStrings` trait provides SQL query formatting capabilities, transforming raw SQL strings into properly formatted, readable queries.
+
+#### Usage
+
+```php
+use Gleman17\LaravelTools\Traits\HasSqlStrings;
+
+class YourClass
+{
+    use HasSqlStrings;
+
+    public function example()
+    {
+        $uglySQL = "SELECT id, name, email, created_at FROM users WHERE active = 1 AND deleted_at IS NULL ORDER BY created_at DESC";
+        
+        $prettySQL = $this->prettyPrintSQL($uglySQL);
+        // Result:
+        // SELECT
+        //     id,
+        //     name,
+        //     email,
+        //     created_at
+        // FROM users
+        // WHERE
+        //         active = 1
+        //         AND deleted_at IS NULL
+        // ORDER BY created_at DESC
+    }
+}
+```
+
+#### Features
+
+- Formats common SQL clauses (SELECT, FROM, WHERE, etc.)
+- Properly indents column lists in SELECT statements
+- Handles JOIN clauses with correct formatting
+- Formats WHERE conditions with proper indentation
+- Supports various SQL keywords and operators
+- Preserves query functionality while improving readability
+
+#### Supported SQL Keywords
+
+- SELECT
+- FROM
+- WHERE
+- ORDER BY
+- GROUP BY
+- HAVING
+- LIMIT
+- OFFSET
+- JOIN types (LEFT, RIGHT, INNER, CROSS, FULL)
+
+#### Formatting Rules
+
+- SELECT clauses list each column on a new line with indentation
+- WHERE conditions are properly indented and aligned
+- AND/OR conditions are aligned with double indentation
+- JOIN clauses are placed on new lines
+- Main clauses (FROM, WHERE, etc.) start at the left margin
+- Maintains proper spacing around operators and keywords
+
 ## Contributing
 Feel free to submit issues or pull requests to improve this package.
 
