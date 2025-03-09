@@ -14,9 +14,9 @@ class BuildRelationshipsService
     private $logger;
 
     public function __construct(
-        ?TableRelationshipAnalyzerService $analyzer,
-        ?RelationshipService $relationshipService,
-        ?ModelService $modelService,
+        ?TableRelationshipAnalyzerService $analyzer=null,
+        ?RelationshipService $relationshipService=null,
+        ?ModelService $modelService=null,
         $filesystem = null,
         $logger = null
     ) {
