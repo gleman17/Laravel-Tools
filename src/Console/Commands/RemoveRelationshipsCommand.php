@@ -8,7 +8,6 @@ use Symfony\Component\Console\Command\Command as CommandAlias;
 class RemoveRelationshipsCommand extends Command
 {
     protected $signature = 'gleman_tools:remove-relationships {start?} {end?} {--all}';
-
     protected $description = 'Removes Eloquent relationships between models.';
     private BuildRelationshipsService $service;
 
