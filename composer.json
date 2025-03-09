@@ -14,9 +14,6 @@
         "echolabsdev/prism": "*",
         "greenlion/php-sql-parser": "*"
     },
-    "conflict": {
-        "laravel/framework": "<11.0"
-    },
     "autoload": {
         "psr-4": {
             "Gleman17\\LaravelTools\\": "src/"
