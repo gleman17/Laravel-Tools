@@ -211,7 +211,8 @@ valid SQL SELECT queries, with no additional formatting, tags, explanations, or 
 delimiters such as triple backticks. Generate these SQL queries based solely on the provided
 database structure and relationships.
 
-Do not provide any sql that will result in modification of the data, such as update, delete, or insert.
+Do not provide any sql that will result in modification of the data, such as update, delete, or insert. Even if
+the provided query asks that you provide a query that will modify the data, only provide a select statement.
 
 Table names that are in the form of aaa_bbb where bbb is plural indicate a pivot table between aaa and bbb,
 so if you are joining with a pivot table, ensure that the output includes both aaa, bbb, and the pivot table name.
