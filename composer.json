@@ -11,7 +11,7 @@
     ],
     "require": {
         "nikic/php-parser": "^5.4",
-        "echolabsdev/prism": "*",
+        "prism-php/prism": "*",
         "greenlion/php-sql-parser": "*"
     },
     "autoload": {

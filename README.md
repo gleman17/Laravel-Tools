@@ -79,7 +79,7 @@ relationship.
 - Laravel 11 or higher
 - PHP 8.3 or higher
 - nikic/php-parser
-- echolabsdev/prism
+- prism-php/prism
 - greenlion/php-sql-parser
 - staudenmeir/eloquent-has-many-deep
 - staudenmeir/belongs-to-through

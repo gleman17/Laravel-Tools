@@ -1,11 +1,11 @@
 <?php
 
 namespace Gleman17\LaravelTools\Services;
-use EchoLabs\Prism\Enums\Provider;
-use EchoLabs\Prism\Exceptions\PrismException;
-use EchoLabs\Prism\Facades\Tool;
-use EchoLabs\Prism\Prism;
-use EchoLabs\Prism\Responses\TextResponse;
+use PrismPHP\Prism\Prism;
+use PrismPHP\Prism\Enums\Provider;
+use PrismPHP\Prism\Exceptions\PrismException;
+use PrismPHP\Prism\Facades\Tool;
+use PrismPHP\Prism\Responses\TextResponse;
 use Config;
 
 class AIQueryService
