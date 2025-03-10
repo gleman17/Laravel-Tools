@@ -27,8 +27,8 @@ class TableRelationshipAnalyzerService
         ?GenerateRelationshipService $generateRelationshipService = null,
         ?ModelGeneratorService $modelGeneratorService = null,
         ?ModelService $modelService = null,
-        $file = null,
-        $log = null
+                                     $file = null,
+                                     $log = null
     ) {
         $this->file = $file ?: new Filesystem();
         $this->log = $log ?: new Log();
@@ -109,7 +109,11 @@ class TableRelationshipAnalyzerService
         return $this->messages;
     }
 
-    protected function addTableToGraph(string $table): void
+    /**
+     * @param string $table
+     * @return void
+     */
+    public function addTableToGraph(string $table): void
     {
         $columns = Schema::getColumnListing($table);
 
@@ -117,18 +121,75 @@ class TableRelationshipAnalyzerService
             if (str_ends_with($column, '_id')) {
                 $relatedTable = substr($column, 0, -3);
 
-                if (!$this->modelHasConnections($relatedTable)) {
-                    $relatedTable = Str::plural($relatedTable); // Handle plural table names
-                    if (!$this->modelHasConnections($relatedTable)) {
-                        continue;
-                    }
+                if ($this->checkIfTheTableExistsDirectly($relatedTable, $table, $column)){
+                    continue;
                 }
 
-                $this->adjacencyList[$table][$relatedTable] = 1;
-                $this->adjacencyList[$relatedTable][$table] = 1;
-                $this->columnList[$table][$relatedTable] = $column;
+                if ($this->checkForPluralVersion($relatedTable, $table, $column)){
+                    continue;
+                }
+
+                $this->checkForNumberedTables($relatedTable, $table, $column);
             }
         }
+    }
+
+    /**
+     * @param string $relatedTable
+     * @param string $table
+     * @param mixed $column
+     * @return bool
+     */
+    public function checkIfTheTableExistsDirectly(string $relatedTable, string $table, mixed $column): bool
+    {
+        if (Schema::hasTable($relatedTable)) {
+            $this->adjacencyList[$table][$relatedTable] = 1;
+            $this->adjacencyList[$relatedTable][$table] = 1;
+            $this->columnList[$table][$relatedTable] = $column;
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * @param string $relatedTable
+     * @param string $table
+     * @param mixed $column
+     * @return bool
+     */
+    public function checkForPluralVersion(string $relatedTable, string $table, mixed $column): bool
+    {
+        $pluralTable = Str::plural($relatedTable);
+        if (Schema::hasTable($pluralTable)) {
+            $this->adjacencyList[$table][$pluralTable] = 1;
+            $this->adjacencyList[$pluralTable][$table] = 1;
+            $this->columnList[$table][$pluralTable] = $column;
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * @param string $relatedTable
+     * @param $matches
+     * @param string $table
+     * @param mixed $column
+     * @return mixed
+     */
+    public function checkForNumberedTables(string $relatedTable, string $table, mixed $column): mixed
+    {
+        if (preg_match('/^(.+?)(\d+)$/', $relatedTable, $matches)) {
+            $baseName = $matches[1];
+            $number = $matches[2];
+            $pluralNumbered = Str::plural($baseName) . $number;
+
+            if (Schema::hasTable($pluralNumbered)) {
+                $this->adjacencyList[$table][$pluralNumbered] = 1;
+                $this->adjacencyList[$pluralNumbered][$table] = 1;
+                $this->columnList[$table][$pluralNumbered] = $column;
+            }
+        }
+        return $matches;
     }
 
     public function generateRelationship(string $modelA, string $modelB): void
@@ -335,7 +396,7 @@ class TableRelationshipAnalyzerService
             }
         }
 
-       return [$modelPath, !empty($modelPath)];
+        return [$modelPath, !empty($modelPath)];
     }
 
     /**
@@ -458,6 +519,78 @@ class TableRelationshipAnalyzerService
 
         return array_unique($connectedTables);
     }
+    /**
+     * Finds the minimal set of tables needed to connect all input tables
+     *
+     * @param array<string> $inputTables List of table names to connect
+     * @return array<string> Minimal list of tables that connect all input tables
+     */
+    public function findMinimalConnectingTables(array $inputTables): array
+    {
+        if (count($inputTables) <= 1) {
+            return $inputTables;
+        }
 
+        $result = $inputTables;
+
+        // Find paths between each pair of input tables
+        for ($i = 0; $i < count($inputTables); $i++) {
+            for ($j = $i + 1; $j < count($inputTables); $j++) {
+                $path = $this->findShortestPath($this->adjacencyList, $inputTables[$i], $inputTables[$j]);
+                if (!empty($path)) {
+                    // Add intermediate tables to the result
+                    foreach ($path as $table) {
+                        if (!in_array($table, $result)) {
+                            $result[] = $table;
+                        }
+                    }
+                }
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * Find shortest path between two tables using BFS
+     *
+     * @param array $graph The relationship graph
+     * @param string $start Starting table
+     * @param string $end Target table
+     * @return array Path of tables connecting start to end
+     */
+    public function findShortestPath(array $graph, string $start, string $end): array
+    {
+        // Handle case where start or end doesn't exist in graph
+        if (!isset($graph[$start]) || !isset($graph[$end])) {
+            return [];
+        }
+
+        // BFS queue
+        $queue = [[$start]];
+        $visited = [$start => true];
+
+        while (!empty($queue)) {
+            $path = array_shift($queue);
+            $node = end($path);
+
+            // Found the target
+            if ($node === $end) {
+                return $path;
+            }
+
+            // Check all neighbors
+            foreach ($graph[$node] as $neighbor => $weight) {
+                if (!isset($visited[$neighbor])) {
+                    $visited[$neighbor] = true;
+                    $newPath = $path;
+                    $newPath[] = $neighbor;
+                    $queue[] = $newPath;
+                }
+            }
+        }
+
+        return []; // No path found
+    }
 
 }
