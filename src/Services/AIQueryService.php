@@ -226,6 +226,10 @@ posts were not asked for but were only part of the limiting conditions.
 
 If an entity has been asked for, include all of the columns mentioned for that entity, even if they are in a condition.
 
+Do not imply any columns that are not mentioned in the query.
+
+Do not imply any joins that are not provided in the relationship graph.
+
 This is the json structure of the database tables: $jsonStructure
 
 This is the relationship graph of the database in json: $graphJson
