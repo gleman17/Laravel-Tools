@@ -97,11 +97,11 @@ class RelationshipService
 
             if ($leftTable === $baseTable) {
                 // Direct relationship with base table
-                $relationships[] = Str::camel(Str::plural($joinTable));
+                $relationships[] = $this->getRelationshipNameFromTable($joinTable);
             } elseif (in_array($leftTable, $tables)) {
                 // Nested relationship
-                $parentRelation = Str::camel(Str::plural($leftTable));
-                $childRelation = Str::camel(Str::plural($joinTable));
+                $parentRelation = $this->getRelationshipNameFromTable($leftTable);
+                $childRelation = $this->getRelationshipNameFromTable($joinTable);
                 $relationships[] = $parentRelation . '.' . $childRelation;
             }
 
@@ -143,12 +143,41 @@ class RelationshipService
 
         return $query;
     }
+
     /**
      * Convert table name to model name
      */
     private function getModelNameFromTable(string $table): string
     {
+        // Check if the table name ends with a number
+        if (preg_match('/^(.+?)(\d+)$/', $table, $matches)) {
+            // If it does, singularize only the text part before the number
+            $textPart = $matches[1];
+            $numberPart = $matches[2];
+            $singular = Str::singular($textPart) . $numberPart;
+            return 'App\\Models\\' . Str::studly($singular);
+        }
+
+        // Otherwise, use the normal singularization
         return 'App\\Models\\' . Str::studly(Str::singular($table));
+    }
+
+    /**
+     * Convert table name to relationship name (camelCase)
+     */
+    private function getRelationshipNameFromTable(string $table): string
+    {
+        // Check if the table name ends with a number
+        if (preg_match('/^(.+?)(\d+)$/', $table, $matches)) {
+            // If it does, pluralize only the text part before the number
+            $textPart = $matches[1];
+            $numberPart = $matches[2];
+            $plural = Str::plural($textPart) . $numberPart;
+            return Str::camel($plural);
+        }
+
+        // Otherwise, use the normal pluralization
+        return Str::camel(Str::plural($table));
     }
 
     /**
@@ -159,7 +188,7 @@ class RelationshipService
         $relationships = [];
         for ($i = 0; $i < count($path) - 1; $i++) {
             $nextTable = $path[$i + 1];
-            $relationships[] = Str::camel(Str::plural($nextTable));
+            $relationships[] = $this->getRelationshipNameFromTable($nextTable);
         }
         return implode('.', $relationships);
     }
@@ -260,8 +289,6 @@ class RelationshipService
 
         return $query;
     }
-
-
 
     public function removeRelationshipFromModel(string $modelName, string $relationshipName): bool
     {
