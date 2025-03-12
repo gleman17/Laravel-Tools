@@ -1,10 +1,10 @@
 <?php
 
 namespace Gleman17\LaravelTools\Services;
-// Manually load Prism class before checking existence
 
 use Config;
 use Exception;
+use Gleman17\LaravelTools\Models\AIQueryCache;
 
 class AIQueryService
 {
@@ -20,16 +20,25 @@ class AIQueryService
     private $toolClass;
 
     /**
+     * Flag to enable/disable caching
+     */
+    private bool $enableCaching;
+
+    /**
      * @param TableRelationshipAnalyzerService|null $analyzerService
      * @param string|null $provider
+     * @param bool $enableCaching
      */
-    public function __construct(?TableRelationshipAnalyzerService $analyzerService = null, ?string $provider = null)
-    {
+    public function __construct(
+        ?TableRelationshipAnalyzerService $analyzerService = null,
+        ?string $provider = null
+    ) {
         require_once base_path('vendor/autoload.php');
         require_once dirname(__DIR__, 2) . '/src/Helpers/StringHelpers.php';
 
         $this->analyzerService = $analyzerService ?? new TableRelationshipAnalyzerService();
         $this->provider = $provider ?? (Config('gleman17_laravel_tools.ai_model') ?? 'gpt-4o-mini');
+        $this->enableCaching = Config('gleman17_laravel_tools.enable_caching', true);
 
         spl_autoload_call(PrismPHP\Prism\Prism::class);
         spl_autoload_call(Prism\Prism\Prism::class);
@@ -72,7 +81,6 @@ class AIQueryService
         if (!$this->toolClass) {
             throw new \Exception("Prism Tool package is not installed or has an incompatible namespace.");
         }
-
     }
 
     public function getTablesReasoning(): string
@@ -170,6 +178,20 @@ PROMPT;
      */
     public function callLLM(?string $systemPrompt, string $prompt): ?string
     {
+        // Concatenate system prompt and user prompt to create a unique hash
+        $fullPrompt = ($systemPrompt ?? '') . "\n\n" . $prompt;
+        $queryHash = hash('sha256', $fullPrompt);
+
+        // Check if caching is enabled
+        if ($this->enableCaching) {
+            // Try to find result in cache
+            $cachedResult = AIQueryCache::where('query_hash', $queryHash)->first();
+
+            if ($cachedResult) {
+                return $cachedResult->response;
+            }
+        }
+
         $retryAttempts = 3;
         $retryDelay = 5;
 
@@ -188,7 +210,18 @@ PROMPT;
                     ->withClientOptions(['timeout' => 30])
                     ->generate();
 
-                return $prismInstance->text;
+                $response = $prismInstance->text;
+
+                // Store result in cache if caching is enabled
+                if ($this->enableCaching && $response) {
+                    AIQueryCache::create([
+                        'query_hash' => $queryHash,
+                        'prompt' => $fullPrompt,
+                        'response' => $response
+                    ]);
+                }
+
+                return $response;
             } catch (Exception $e) {
                 if ($attempt === $retryAttempts) {
                     return null;
@@ -196,7 +229,28 @@ PROMPT;
                 sleep($retryDelay);
             }
         }
+
         return null;
+    }
+
+    /**
+     * Disables the caching functionality
+     *
+     * @return void
+     */
+    public function disableCaching(): void
+    {
+        $this->enableCaching = false;
+    }
+
+    /**
+     * Enables the caching functionality
+     *
+     * @return void
+     */
+    public function enableCaching(): void
+    {
+        $this->enableCaching = true;
     }
 
     /**
