@@ -104,7 +104,7 @@ Follow the instructions to configure Prism.
 You can publish the configuration file to customize command signatures:
 
 ```bash
-php artisan vendor:publish --tag=laravel-tools-config
+php artisan vendor:publish --tag=gleman17-laravel-tools-config
 ```
 
 This will create a `config/gleman17_laravel_tools.php` file where you can configure command signatures and other options.
