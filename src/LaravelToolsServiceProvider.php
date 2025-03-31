@@ -5,6 +5,7 @@ namespace Gleman17\LaravelTools;
 use Gleman17\LaravelTools\Console\Commands\AnalyzeMethodUsageCommand;
 use Gleman17\LaravelTools\Console\Commands\BuildRelationshipsCommand;
 use Gleman17\LaravelTools\Console\Commands\CompareTablesWithModelsCommand;
+use Gleman17\LaravelTools\Console\Commands\CustomCommandsCommand;
 use Gleman17\LaravelTools\Console\Commands\ListModelsCommand;
 use Gleman17\LaravelTools\Console\Commands\RemoveRelationshipsCommand;
 use Gleman17\LaravelTools\Console\Commands\ClearAICacheCommand;
@@ -37,6 +38,7 @@ class LaravelToolsServiceProvider extends ServiceProvider
                 ListModelsCommand::class,
                 AnalyzeMethodUsageCommand::class,
                 ClearAICacheCommand::class,
+                CustomCommandsCommand::class,
             ]);
         }
     }
