@@ -204,6 +204,29 @@ php artisan tools:remove-relationships {startModel?} {endModel?} {--all}
 php artisan tools:remove-relationships User Role
 ```
 
+### 5. 'tools:custom-commands {--only : List only commands created in this application}'
+This Artisan command provides a way to list custom commands registered within your Laravel application, helping you distinguish between your application-specific commands, third-party package commands, and core framework commands.
+
+## Description
+
+The `php artisan tools:custom-commands` command scans all registered Artisan commands and filters them to display only those that are considered "custom". By default, this means excluding commands belonging to the core Laravel framework (`Illuminate\*`, `Laravel\*`) and Symfony components (`Symfony\*`).
+
+It presents the commands grouped by their namespace (the part before the first `:` in the command name, e.g., `app`, `make`, `queue`) similar to the standard `php artisan list` command, making it easy to navigate.
+
+## Usage
+
+### Basic Usage
+
+To list all non-core commands (including application commands and third-party package commands):
+
+```bash
+php artisan tools:custom-commands
+```
+To list only the commands defined within your application's App\ namespace, use the --only flag:
+```bash
+php artisan tools:custom-commands --only
+```
+
 ---
 # Laravel Tools - Natural Language SQL Query Generator
 
