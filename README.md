@@ -33,7 +33,7 @@ tokens aren't free) and the LLM might hallucinate some tables and relationships 
 This package takes a different approach.  The key is to limit the amount of metadate the LLM needs to look at in order to formulate
 the query.  It does this by analyzing the query to see what entities are described, then it builds a graph of the
 database and returns the metadata showing the relationships between tables for only those tables that are required to perform 
-the query.  For example, if if your query was "Show me all users that have been created in the last week that have added a comment" 
+the query.  For example, if your query was "Show me all users that have been created in the last week that have added a comment" 
 it would determine that to answer this you need the users, posts, and comments table.  It would provide the metadata for just
 those tables to the LLM and let it refine the query further.
 
